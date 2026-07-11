@@ -1,0 +1,8 @@
+src/
+tests/
+.git/
+.github/
+.vscode/
+.idea/
+*.md
+tsconfig.json
