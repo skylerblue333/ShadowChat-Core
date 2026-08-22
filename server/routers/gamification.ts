@@ -2,67 +2,62 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 
 export const gamificationRouter = router({
-  // Get user points
-  getUserPoints: protectedProcedure.query(async ({ ctx }) => {
-    return {
-      userId: ctx.user.id,
-      totalPoints: Math.floor(Math.random() * 50000),
-      level: Math.floor(Math.random() * 100) + 1,
-      rank: Math.floor(Math.random() * 1000) + 1,
-      streak: Math.floor(Math.random() * 30),
-    };
-  }),
+  getUserPoints: protectedProcedure.query(async ({ ctx }) => ({
+    userId: ctx.user.id,
+    totalPoints: null as number | null,
+    level: null as number | null,
+    rank: null as number | null,
+    streak: null as number | null,
+    unavailable: true,
+    error: "Gamification points are unavailable until real event accounting and user progress persistence are configured",
+  })),
 
-  // Add points for action
   addPoints: protectedProcedure
-    .input(z.object({ action: z.string(), amount: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, pointsAdded: input.amount, totalPoints: 50000 + input.amount };
-    }),
+    .input(z.object({ action: z.string().min(1), amount: z.number().nonnegative() }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      pointsAdded: null as number | null,
+      totalPoints: null as number | null,
+      error: "Points cannot be added until verified event attribution and persistent gamification accounting are configured",
+    })),
 
-  // Get badges
-  getBadges: protectedProcedure.query(async ({ ctx }) => {
-    return [
-      { id: 1, name: "First Steps", description: "Complete first course", earned: true },
-      { id: 2, name: "Mining Master", description: "Mine 1000 tokens", earned: true },
-      { id: 3, name: "Social Butterfly", description: "Follow 50 users", earned: false },
-      { id: 4, name: "Trader", description: "Complete 100 swaps", earned: true },
-      { id: 5, name: "Philanthropist", description: "Burn 10000 tokens", earned: false },
-    ];
-  }),
+  getBadges: protectedProcedure.query(async () => ({
+    badges: [],
+    unavailable: true,
+    error: "Badges are unavailable until achievement criteria and persistent user progress are configured",
+  })),
 
-  // Get achievements
-  getAchievements: protectedProcedure.query(async ({ ctx }) => {
-    return [
-      { id: 1, title: "Learner", description: "Complete 5 courses", progress: 3, total: 5 },
-      { id: 2, title: "Miner", description: "Mine 5000 tokens", progress: 2847, total: 5000 },
-      { id: 3, title: "Trader", description: "Complete 50 trades", progress: 42, total: 50 },
-      { id: 4, title: "Wealthy", description: "Accumulate $100k", progress: 58000, total: 100000 },
-    ];
-  }),
+  getAchievements: protectedProcedure.query(async () => ({
+    achievements: [],
+    unavailable: true,
+    error: "Achievements are unavailable until verified course, social, and activity progress is configured",
+  })),
 
-  // Get leaderboard
   getLeaderboard: protectedProcedure
     .input(z.object({ category: z.enum(["points", "level", "wealth", "mining"]).default("points") }))
-    .query(async ({ ctx, input }) => {
-      return [
-        { rank: 1, userId: 4521, username: "CryptoKing", value: 250000, medal: "🥇" },
-        { rank: 2, userId: 8834, username: "BlockchainPro", value: 185000, medal: "🥈" },
-        { rank: 3, userId: 2156, username: "MiningMaster", value: 156000, medal: "🥉" },
-        { rank: 4, userId: 7743, username: "TradingGuru", value: 145000, medal: "⭐" },
-        { rank: 5, userId: 9012, username: "DeFiWizard", value: 128000, medal: "⭐" },
-      ];
-    }),
+    .query(async ({ input }) => ({
+      category: input.category,
+      leaderboard: [],
+      unavailable: true,
+      error: "Leaderboards are unavailable until privacy-reviewed aggregation and verified source data are configured",
+    })),
 
-  // Unlock achievement
   unlockAchievement: protectedProcedure
-    .input(z.object({ achievementId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, achievement: "Miner", reward: 1000 };
-    }),
+    .input(z.object({ achievementId: z.number().int().positive() }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      achievement: null as string | null,
+      reward: null as number | null,
+      error: "Achievement unlocking is unavailable until verified progress and reward accounting are configured",
+    })),
 
-  // Daily reward
-  claimDailyReward: protectedProcedure.mutation(async ({ ctx }) => {
-    return { success: true, reward: 100, nextClaimIn: 86400 };
-  }),
+  claimDailyReward: protectedProcedure.mutation(async () => ({
+    success: false,
+    unavailable: true,
+    reward: null as number | null,
+    nextClaimIn: null as number | null,
+    error: "Daily rewards are unavailable until persistent eligibility and reward accounting are configured",
+  })),
 });
