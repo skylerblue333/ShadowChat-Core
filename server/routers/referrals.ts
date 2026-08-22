@@ -1,4 +1,5 @@
 import { router, protectedProcedure } from "../_core/trpc";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { getDb } from "../db";
 import { referrals, referralStats } from "../../drizzle/schema";
@@ -6,7 +7,7 @@ import { eq } from "drizzle-orm";
 
 export const referralsRouter = router({
   generateReferralCode: protectedProcedure.mutation(async ({ ctx }) => {
-    const code = `REF_${ctx.user.id}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const code = `REF_${ctx.user.id}_${randomBytes(6).toString("hex").toUpperCase()}`;
     return { code, url: `https://skycoin4444-izajymrg.manus.space?ref=${code}` };
   }),
 
@@ -31,7 +32,11 @@ export const referralsRouter = router({
     }
   }),
 
-  claimReferralRewards: protectedProcedure.mutation(async ({ ctx }) => {
-    return { success: true, amount: 500, token: "SKY444" };
-  }),
+  claimReferralRewards: protectedProcedure.mutation(async () => ({
+    success: false,
+    unavailable: true,
+    amount: null as number | null,
+    token: null as string | null,
+    error: "Referral reward claims are unavailable until verified attribution and reward accounting are configured",
+  })),
 });
