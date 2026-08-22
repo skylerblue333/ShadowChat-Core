@@ -148,7 +148,7 @@ export const agentsRouter = router({
     }),
 
   // Fraud detection
-  detectFraud: publicProcedure
+  detectFraud: protectedProcedure
     .input(
       z.object({
         transactionAmount: z.number(),
@@ -176,14 +176,25 @@ export const agentsRouter = router({
       const contentMsg = response.choices[0]?.message.content;
       const text = typeof contentMsg === "string" ? contentMsg : "{}";
       try {
-        const result = JSON.parse(text);
+        const result = JSON.parse(text) as { isFraud?: unknown; riskScore?: unknown; reason?: unknown };
+        if (
+          typeof result.isFraud !== "boolean" ||
+          typeof result.riskScore !== "number" ||
+          !Number.isFinite(result.riskScore) ||
+          result.riskScore < 0 ||
+          result.riskScore > 1 ||
+          typeof result.reason !== "string" ||
+          result.reason.trim().length === 0
+        ) {
+          return { isFraud: null as boolean | null, riskScore: null as number | null, reason: null as string | null, unavailable: true, error: "Fraud assessment is unavailable because the model response failed validation" };
+        }
         return {
-          isFraud: result.isFraud || false,
-          riskScore: result.riskScore || 0.1,
-          reason: result.reason || "Transaction appears legitimate",
+          isFraud: result.isFraud,
+          riskScore: result.riskScore,
+          reason: result.reason,
         };
       } catch {
-        return { isFraud: false, riskScore: 0.05, reason: "Transaction appears legitimate" };
+        return { isFraud: null as boolean | null, riskScore: null as number | null, reason: null as string | null, unavailable: true, error: "Fraud assessment is unavailable because the model response was not valid JSON" };
       }
     }),
 
