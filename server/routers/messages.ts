@@ -1,13 +1,13 @@
-import { and, desc, eq, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { messages } from "../../drizzle/schema";
-import { getDb } from "../db";
+import { directMessages, users } from "../../drizzle/schema";
 import { createMessageInput } from "../messaging-contract";
+import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
-const conversationInput = z.object({
-  otherUserId: z.number().int().positive(),
+const listMessagesInput = z.object({
+  participantId: z.number().int().positive(),
   limit: z.number().int().min(1).max(100).default(50),
 });
 
@@ -15,60 +15,73 @@ export const messagesRouter = router({
   send: protectedProcedure
     .input(createMessageInput)
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Message persistence is unavailable" });
+      if (input.recipientId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot message yourself" });
       }
-      if (ctx.user.id === input.recipientId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "sender and recipient must be different users" });
+
+      const database = await getDb();
+      if (!database) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       }
-      const inserted = await db.insert(messages).values({
+
+      const recipient = await database
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, input.recipientId))
+        .limit(1);
+      if (recipient.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Recipient not found" });
+      }
+
+      const inserted = await database.insert(directMessages).values({
         senderId: ctx.user.id,
         recipientId: input.recipientId,
         content: input.content,
       });
       const messageId = Number(inserted[0].insertId);
-      const [message] = await db.select().from(messages).where(eq(messages.id, messageId)).limit(1);
-      if (!message) {
+      const message = await database
+        .select()
+        .from(directMessages)
+        .where(eq(directMessages.id, messageId))
+        .limit(1);
+
+      if (message.length === 0) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Message was not persisted" });
       }
-      return message;
+      return message[0];
     }),
 
   conversation: protectedProcedure
-    .input(conversationInput)
+    .input(listMessagesInput)
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Message persistence is unavailable" });
+      if (input.participantId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Conversation participant must differ from current user" });
       }
-      if (ctx.user.id === input.otherUserId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "conversation requires another user" });
+
+      const database = await getDb();
+      if (!database) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       }
-      return db
+
+      const participant = await database
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, input.participantId))
+        .limit(1);
+      if (participant.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conversation participant not found" });
+      }
+
+      return database
         .select()
-        .from(messages)
+        .from(directMessages)
         .where(
-          or(
-            and(eq(messages.senderId, ctx.user.id), eq(messages.recipientId, input.otherUserId)),
-            and(eq(messages.senderId, input.otherUserId), eq(messages.recipientId, ctx.user.id)),
+          and(
+            eq(directMessages.senderId, ctx.user.id),
+            eq(directMessages.recipientId, input.participantId),
           ),
         )
-        .orderBy(desc(messages.createdAt))
+        .orderBy(directMessages.createdAt, directMessages.id)
         .limit(input.limit);
-    }),
-
-  markRead: protectedProcedure
-    .input(z.object({ messageId: z.number().int().positive() }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Message persistence is unavailable" });
-      }
-      const updated = await db
-        .update(messages)
-        .set({ readAt: new Date() })
-        .where(and(eq(messages.id, input.messageId), eq(messages.recipientId, ctx.user.id)));
-      return { updated: Number(updated[0].affectedRows) === 1 };
     }),
 });

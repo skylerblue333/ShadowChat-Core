@@ -35,11 +35,10 @@ import { integrationsRouter } from "./routers/integrations";
 import { marketplaceAdvancedRouter } from "./routers/marketplace-advanced";
 import { uploadsRouter } from "./routers/uploads";
 import { seedRouter } from "./routers/seed";
-
 import { freeTierRouter } from "./routers/free-tier";
 import { notificationsRouter } from "./routers/notifications";
-import { messagesRouter } from "./routers/messages";
 import { codeQualityRouter } from "./routers/code-quality";
+
 import { advancedSearchRouter } from "./routers/advanced-search";
 import { cryptoRouter } from "./routers/crypto";
 import { leaderboardsRouter } from "./routers/leaderboards";
@@ -141,7 +140,6 @@ export const appRouter = router({
   mining: miningRouter,
   rwa: rwaRouter,
   stripe: stripeRouter,
-  messages: messagesRouter,
   // Global procedures
   getNetworks: publicProcedure.query(async () => []),
   getWidgets: publicProcedure.query(async () => []),
