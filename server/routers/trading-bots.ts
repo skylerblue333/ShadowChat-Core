@@ -16,7 +16,18 @@ export const tradingBotsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return { success: true, botId: Math.floor(Math.random() * 10000), status: "created" };
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const result = await db.insert(tradingBots).values({
+        userId: ctx.user.id,
+        name: input.name.trim(),
+        strategy: input.strategy,
+        baseToken: input.baseToken.trim().toUpperCase(),
+        quoteToken: input.quoteToken.trim().toUpperCase(),
+        capital: input.capital,
+      });
+      return { success: true, botId: Number(result[0].insertId), status: "paused" as const };
     }),
 
   getUserBots: protectedProcedure.query(async ({ ctx }) => {
