@@ -22,44 +22,54 @@ const allFeatures = {
 
 export const integrationRouter = router({
   getSystemStatus: publicProcedure.query(async () => ({
-    status: 'operational',
-    features: allFeatures.features,
-    versions: allFeatures.versions,
+    status: 'unavailable' as const,
+    features: null as number | null,
+    versions: null as number | null,
     uptime: process.uptime(),
+    unavailable: true,
+    error: "System capability status is unavailable until measured service health and feature registry data are configured",
     timestamp: new Date(),
   })),
   
   executeAIAgent: protectedProcedure
     .input(z.object({ agentId: z.string(), prompt: z.string() }))
     .mutation(async ({ input: { agentId, prompt } }) => {
-      return { 
-        success: true, 
-        result: `Executed ${agentId} with prompt: ${prompt}`,
-        timestamp: new Date(),
+      return {
+        success: false,
+        unavailable: true,
+        agentId,
+        result: null as string | null,
+        error: "AI-agent execution is unavailable until a verified agent runtime and model integration are configured",
       };
     }),
   
-  getAllFeatures: publicProcedure.query(() => allFeatures),
+  getAllFeatures: publicProcedure.query(() => ({
+    features: [],
+    total: null as number | null,
+    unavailable: true,
+    error: "Feature registry is unavailable until backed by the verified platform registry",
+  })),
   
   getFeaturesByCategory: publicProcedure
     .input(z.object({ category: z.string() }))
     .query(({ input: { category } }) => {
       const features = allFeatures.categories[category as keyof typeof allFeatures.categories];
-      return features || { error: 'Category not found' };
+      return features ? { ...features, unavailable: true, error: "Feature category data is unavailable until backed by the verified platform registry" } : { error: 'Category not found' };
     }),
 
   getSystemMetrics: publicProcedure.query(() => ({
-    apiResponseTime: 85,
-    cacheHitRate: 92,
-    databaseQueryTime: 42,
-    errorRate: 0.01,
-    uptime: 99.99,
+    apiResponseTime: null as number | null,
+    cacheHitRate: null as number | null,
+    databaseQueryTime: null as number | null,
+    errorRate: null as number | null,
+    uptime: null as number | null,
+    unavailable: true,
+    error: "System metrics are unavailable until measured observability data is configured",
   })),
 
-  getAIAgents: publicProcedure.query(() => [
-    { id: 'codeEngineer', name: 'Code Engineer', status: 'active' },
-    { id: 'dataAnalyst', name: 'Data Analyst', status: 'active' },
-    { id: 'businessAdvisor', name: 'Business Advisor', status: 'active' },
-    { id: 'securityExpert', name: 'Security Expert', status: 'active' },
-  ]),
+  getAIAgents: publicProcedure.query(() => ({
+    agents: [],
+    unavailable: true,
+    error: "AI-agent registry is unavailable until verified agent accounts are configured",
+  })),
 });
