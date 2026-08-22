@@ -33,21 +33,23 @@ function authCtx(): TrpcContext {
 beforeEach(() => vi.clearAllMocks());
 
 describe("marketplace.purchase", () => {
-  it("records a multi-crypto transaction and alerts owner on large purchases", async () => {
+  it("refuses settlement without a verified payment provider and ledger", async () => {
     dbMock.getProduct.mockResolvedValue({ id: 4, title: "AI Trading Bot Pro", priceSky: 2400 });
     const caller = marketplaceRouter.createCaller(authCtx());
     const res = await caller.purchase({ productId: 4, currency: "DODGE" });
-    expect(res.success).toBe(true);
-    expect(dbMock.recordTransaction).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 8, productId: 4, currency: "DODGE", status: "completed" }),
-    );
-    expect(notifyOwner).toHaveBeenCalledTimes(1);
+    expect(res.success).toBe(false);
+    expect(res.unavailable).toBe(true);
+    expect(dbMock.recordTransaction).not.toHaveBeenCalled();
+    expect(notifyOwner).not.toHaveBeenCalled();
   });
 
-  it("does not alert on small purchases", async () => {
+  it("refuses small purchases without a verified payment provider", async () => {
     dbMock.getProduct.mockResolvedValue({ id: 5, title: "Sticker Pack", priceSky: 50 });
     const caller = marketplaceRouter.createCaller(authCtx());
-    await caller.purchase({ productId: 5, currency: "TRUMP" });
+    const res = await caller.purchase({ productId: 5, currency: "TRUMP" });
+    expect(res.success).toBe(false);
+    expect(res.unavailable).toBe(true);
+    expect(dbMock.recordTransaction).not.toHaveBeenCalled();
     expect(notifyOwner).not.toHaveBeenCalled();
   });
 

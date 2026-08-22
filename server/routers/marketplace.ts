@@ -35,21 +35,14 @@ export const marketplaceRouter = router({
     .mutation(async ({ input, ctx }) => {
       const product = await getProduct(input.productId);
       if (!product) return { success: false, message: "Product not found." };
-      await recordTransaction({
-        userId: ctx.user.id,
+      return {
+        success: false,
+        unavailable: true,
         productId: product.id,
         amount: product.priceSky,
         currency: input.currency,
-        status: "completed",
-      });
-      await logEvent("purchase", "marketplace", product.priceSky, ctx.user.id);
-      if (product.priceSky >= LARGE_TX_THRESHOLD) {
-        await notifyOwner({
-          title: "Large marketplace transaction",
-          content: `User ${ctx.user.name ?? ctx.user.openId} purchased "${product.title}" for ${product.priceSky} ${input.currency}.`,
-        });
-      }
-      return { success: true };
+        error: "Marketplace purchase is unavailable until a verified payment provider and settlement ledger are configured",
+      };
     }),
 
   myTransactions: protectedProcedure.query(({ ctx }) => listUserTransactions(ctx.user.id)),
