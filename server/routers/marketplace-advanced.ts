@@ -112,8 +112,11 @@ export const marketplaceExtendedRouter = router({
   recommend: publicProcedure.query(async () => ({
     recommendations: [],
   })),
-  purchase: protectedProcedure.input(z.object({ productId: z.string() })).mutation(async ({ input }) => ({
-    success: true,
+  purchase: protectedProcedure.input(z.object({ productId: z.string().min(1) })).mutation(async ({ input }) => ({
+    success: false,
+    unavailable: true,
+    productId: input.productId,
+    error: "Marketplace purchases are unavailable until verified order, payment, and fulfillment persistence are configured",
   })),
   myTransactions: protectedProcedure.query(async () => ({
     transactions: [],
