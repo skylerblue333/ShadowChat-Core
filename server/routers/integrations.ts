@@ -48,9 +48,13 @@ export const integrationsRouter = router({
 
   chainlinkPriceOracle: publicProcedure
     .input(z.object({ symbol: z.string() }))
-    .query(async ({ input }) => {
-      return { price: Math.random() * 100, symbol: input.symbol, timestamp: Date.now() };
-    }),
+    .query(async ({ input }) => ({
+      symbol: input.symbol,
+      price: null as number | null,
+      timestamp: null as number | null,
+      unavailable: true,
+      error: "Price oracle is unavailable until a verified Chainlink/RPC integration is configured",
+    })),
 
   // ===== EMAIL INTEGRATIONS =====
   sendgridEmail: protectedProcedure
@@ -132,9 +136,12 @@ export const integrationsRouter = router({
     }),
 
   // ===== API KEY MANAGEMENT =====
-  generateAPIKey: protectedProcedure.mutation(async () => {
-    return { apiKey: "sk_" + Math.random().toString(36).substring(7), success: true };
-  }),
+  generateAPIKey: protectedProcedure.mutation(async () => ({
+    apiKey: null as string | null,
+    success: false,
+    unavailable: true,
+    error: "API key issuance is unavailable until secure server-side storage, hashing, and revocation are configured",
+  })),
 
   revokeAPIKey: protectedProcedure
     .input(z.object({ apiKey: z.string() }))
@@ -145,15 +152,21 @@ export const integrationsRouter = router({
   // ===== OAUTH INTEGRATIONS =====
   googleOAuth: publicProcedure
     .input(z.object({ code: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, accessToken: "token_" + Date.now() };
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      accessToken: null as string | null,
+      error: "Google OAuth is unavailable until a verified OAuth client and server-side token exchange are configured",
+    })),
 
   githubOAuth: publicProcedure
     .input(z.object({ code: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, accessToken: "token_" + Date.now() };
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      accessToken: null as string | null,
+      error: "GitHub OAuth is unavailable until a verified OAuth client and server-side token exchange are configured",
+    })),
 
   // ===== MONITORING & LOGGING =====
   logEvent: publicProcedure
