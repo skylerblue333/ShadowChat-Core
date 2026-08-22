@@ -46,10 +46,13 @@ export const tradingBotsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      await db
+      const result = await db
         .update(tradingBots)
         .set({ status: "active" })
         .where(and(eq(tradingBots.id, input.botId), eq(tradingBots.userId, ctx.user.id)));
+      if (Number(result[0].affectedRows ?? 0) === 0) {
+        return { success: false, botId: input.botId, error: "Trading bot not found" };
+      }
       return { success: true, botId: input.botId, status: "active" as const };
     }),
 
@@ -59,10 +62,13 @@ export const tradingBotsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      await db
+      const result = await db
         .update(tradingBots)
         .set({ status: "stopped" })
         .where(and(eq(tradingBots.id, input.botId), eq(tradingBots.userId, ctx.user.id)));
+      if (Number(result[0].affectedRows ?? 0) === 0) {
+        return { success: false, botId: input.botId, error: "Trading bot not found" };
+      }
       return { success: true, botId: input.botId, status: "stopped" as const };
     }),
 
