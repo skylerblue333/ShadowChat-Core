@@ -175,13 +175,13 @@ export const integrationsRouter = router({
       return { logged: true, eventId: "log_" + Date.now() };
     }),
 
-  getSystemHealth: publicProcedure.query(async () => {
-    return {
-      status: "healthy",
-      uptime: 99.99,
-      responseTime: 45,
-      errorRate: 0.01,
-      activeUsers: Math.floor(Math.random() * 10000),
-    };
-  }),
+  getSystemHealth: publicProcedure.query(async () => ({
+    status: "unavailable" as const,
+    uptime: null as number | null,
+    responseTime: null as number | null,
+    errorRate: null as number | null,
+    activeUsers: null as number | null,
+    unavailable: true,
+    error: "Integration health is unavailable until measured service telemetry is configured",
+  })),
 });
