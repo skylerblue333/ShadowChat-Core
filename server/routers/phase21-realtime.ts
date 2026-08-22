@@ -1,6 +1,7 @@
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
-import { db as database } from "../db";
+import { getDb } from "../db";
+import { socialPosts, users } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 
 // Phase 21 — Real-Time Features & Advanced Integrations
@@ -86,25 +87,41 @@ export const phase21RealtimeRouter = router({
       };
     }),
 
-  // Live social feed with real-time updates
+  // Persisted social feed. Realtime transport can be layered on top of this stable source.
   getRealtimeFeed: protectedProcedure
     .input(z.object({
-      limit: z.number().default(20),
-      offset: z.number().default(0),
+      limit: z.number().int().min(1).max(100).default(20),
+      offset: z.number().int().min(0).default(0),
     }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) {
+        return { posts: [], hasMore: false, nextUpdate: null };
+      }
+
+      const posts = await database
+        .select({
+          id: socialPosts.id,
+          author: users.name,
+          content: socialPosts.content,
+          likes: socialPosts.likes,
+          timestamp: socialPosts.createdAt,
+        })
+        .from(socialPosts)
+        .leftJoin(users, eq(users.id, socialPosts.userId))
+        .orderBy(desc(socialPosts.createdAt))
+        .limit(input.limit + 1)
+        .offset(input.offset);
+
+      const hasMore = posts.length > input.limit;
       return {
-        posts: Array.from({ length: input.limit }, (_, i) => ({
-          id: (i + 1).toString(),
-          author: `User${Math.floor(Math.random() * 1000)}`,
-          content: `Live post #${i + 1}`,
-          likes: Math.floor(Math.random() * 1000),
-          comments: Math.floor(Math.random() * 100),
-          timestamp: new Date(Date.now() - Math.random() * 3600000),
-          isLiked: Math.random() > 0.5,
+        posts: posts.slice(0, input.limit).map((post) => ({
+          ...post,
+          author: post.author ?? "Unknown user",
+          isLiked: false,
         })),
-        hasMore: true,
-        nextUpdate: new Date(Date.now() + 5000),
+        hasMore,
+        nextUpdate: null,
       };
     }),
 
