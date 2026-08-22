@@ -357,100 +357,35 @@ export const cryptoRouter = router({
     .input(z.object({ fromToken: TokenEnum, toToken: TokenEnum, amount: z.number().min(0.001) }))
     .query(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) return { rate: 1, toAmount: input.amount };
+      if (!db) return { rate: null, toAmount: null, unavailable: true, reason: "Verified price data is unavailable" };
 
       try {
         const prices = await db.select().from(priceFeeds).where(eq(priceFeeds.token, input.fromToken));
         const toPrices = await db.select().from(priceFeeds).where(eq(priceFeeds.token, input.toToken));
 
-        const fromPrice = prices[0]?.priceUsd || 1;
-        const toPrice = toPrices[0]?.priceUsd || 1;
+        const fromPrice = prices[0]?.priceUsd;
+        const toPrice = toPrices[0]?.priceUsd;
+        if (fromPrice == null || toPrice == null || toPrice <= 0) {
+          return { rate: null, toAmount: null, unavailable: true, reason: "Verified price data is unavailable" };
+        }
 
         const rate = fromPrice / toPrice;
         const toAmount = input.amount * rate * 0.99; // 1% slippage
 
-        return { rate, toAmount, slippage: 0.01 };
+        return { rate, toAmount, slippage: 0.01, unavailable: false };
       } catch {
-        return { rate: 1, toAmount: input.amount, slippage: 0.01 };
+        return { rate: null, toAmount: null, unavailable: true, reason: "Verified price data is unavailable" };
       }
     }),
 
   swap: protectedProcedure
     .input(z.object({ fromToken: TokenEnum, toToken: TokenEnum, fromAmount: z.number().min(0.001) }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) return { success: false };
-
-      try {
-        // Get swap rate
-        const prices = await db.select().from(priceFeeds);
-        const fromPrice = prices.find((p) => p.token === input.fromToken)?.priceUsd || 1;
-        const toPrice = prices.find((p) => p.token === input.toToken)?.priceUsd || 1;
-
-        const rate = fromPrice / toPrice;
-        const toAmount = input.fromAmount * rate * 0.99; // 1% slippage
-
-        // Check balance
-        const fromWallet = await db
-          .select()
-          .from(cryptoWallets)
-          .where(and(eq(cryptoWallets.userId, ctx.user.id), eq(cryptoWallets.token, input.fromToken)))
-          .limit(1);
-
-        if (!fromWallet[0] || fromWallet[0].balance < input.fromAmount) {
-          return { success: false, error: "Insufficient balance" };
-        }
-
-        // Create swap order
-        const orderResult = await db.insert(swapOrders).values({
-          userId: ctx.user.id,
-          fromToken: input.fromToken,
-          toToken: input.toToken,
-          fromAmount: input.fromAmount,
-          toAmount,
-          exchangeRate: rate,
-          slippage: 0.01,
-          status: "completed",
-          completedAt: new Date(),
-        });
-
-        const orderId = (orderResult as any).insertId || 0;
-
-        // Update from wallet
-        await db
-          .update(cryptoWallets)
-          .set({ balance: fromWallet[0].balance - input.fromAmount })
-          .where(eq(cryptoWallets.id, fromWallet[0].id));
-
-        // Update to wallet
-        const toWallet = await db
-          .select()
-          .from(cryptoWallets)
-          .where(and(eq(cryptoWallets.userId, ctx.user.id), eq(cryptoWallets.token, input.toToken)))
-          .limit(1);
-
-        if (toWallet[0]) {
-          await db
-            .update(cryptoWallets)
-            .set({ balance: toWallet[0].balance + toAmount })
-            .where(eq(cryptoWallets.id, toWallet[0].id));
-        }
-
-        // Record transactions
-        await db.insert(cryptoTransactions).values({
-          userId: ctx.user.id,
-          token: input.fromToken,
-          type: "swap",
-          amount: input.fromAmount,
-          relatedId: orderId,
-          description: `Swapped ${input.fromAmount} ${input.fromToken} to ${input.toToken}`,
-        });
-
-        return { success: true, orderId, toAmount };
-      } catch (error) {
-        return { success: false, error: String(error) };
-      }
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      toAmount: null as number | null,
+      error: "Token swaps are unavailable until verified pricing and exchange settlement are configured",
+    })),
 
   getSwapHistory: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
