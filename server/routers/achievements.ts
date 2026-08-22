@@ -26,8 +26,12 @@ export const achievementsRouter = router({
   }),
 
   claimReward: protectedProcedure
-    .input(z.object({ achievementId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, reward: "100 SKY444" };
-    }),
+    .input(z.object({ achievementId: z.number().int().positive() }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      achievementId: input.achievementId,
+      reward: null as string | null,
+      error: "Achievement rewards are unavailable until verified completion and reward accounting are configured",
+    })),
 });
