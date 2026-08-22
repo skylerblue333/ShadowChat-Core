@@ -37,36 +37,11 @@ Return as JSON.`,
 
         const content = response.choices[0]?.message?.content || "";
         
-        // Parse LLM response
-        const qualityScore = Math.floor(Math.random() * 30) + 70; // 70-100
-        const issuesCount = Math.floor(Math.random() * 3);
-        const performanceRating = Math.floor(Math.random() * 3) + 3; // 3-5
-        const securityRating = Math.floor(Math.random() * 3) + 3;
-        const maintainabilityRating = Math.floor(Math.random() * 3) + 3;
-
         return {
-          qualityScore,
-          ratings: {
-            performance: performanceRating,
-            security: securityRating,
-            maintainability: maintainabilityRating,
-            readability: Math.floor(Math.random() * 3) + 3,
-            testability: Math.floor(Math.random() * 3) + 3,
-          },
-          issues: {
-            critical: Math.max(0, issuesCount - 1),
-            warning: issuesCount,
-            info: Math.floor(Math.random() * 3),
-          },
-          suggestions: [
-            "Add error handling for edge cases",
-            "Consider using async/await for better readability",
-            "Add unit tests for critical functions",
-            "Optimize database queries",
-            "Add input validation",
-          ],
-          grade: qualityScore >= 90 ? "A" : qualityScore >= 80 ? "B" : qualityScore >= 70 ? "C" : "D",
-          message: `Code quality evaluated - Score: ${qualityScore}/100`,
+          evaluation: content,
+          parsed: false,
+          unavailable: true,
+          message: "The model returned an evaluation, but no validated structured score is exposed until schema validation is configured",
         };
       } catch (error) {
         return {
@@ -87,19 +62,12 @@ Return as JSON.`,
       })),
     }))
     .mutation(async ({ input }) => {
-      const ranked = input.snippets.map((snippet, idx) => ({
-        id: snippet.id,
-        rank: idx + 1,
-        qualityScore: Math.floor(Math.random() * 30) + 70,
-        grade: "A",
-        recommendation: idx === 0 ? "Recommended" : idx === 1 ? "Good" : "Fair",
-      })).sort((a, b) => b.qualityScore - a.qualityScore);
-
       return {
         totalSnippets: input.snippets.length,
-        ranked,
-        topPick: ranked[0],
-        message: "Code snippets ranked by quality",
+        ranked: [],
+        topPick: null,
+        unavailable: true,
+        message: "Snippet ranking is unavailable until each model evaluation is schema-validated",
       };
     }),
 
