@@ -4,18 +4,19 @@ import { z } from "zod";
 export const phase25NotificationsRouter = router({
   subscribeNotifications: protectedProcedure.input(z.object({ channels: z.array(z.string()) })).query(async ({ input }) => ({
     subscribed: input.channels,
-    active: true,
+    active: false,
+    unavailable: true,
+    error: "Notification subscriptions are unavailable until a verified delivery provider is configured",
   })),
-  sendNotification: protectedProcedure.input(z.object({ userId: z.string(), message: z.string() })).mutation(async ({ input }) => ({
-    success: true,
-    notificationId: `notif_${Date.now()}`,
+  sendNotification: protectedProcedure.input(z.object({ userId: z.string(), message: z.string().min(1) })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    notificationId: null as string | null,
+    error: "Notification delivery is unavailable until a verified provider and user authorization policy are configured",
   })),
   getNotificationHistory: protectedProcedure.query(async () => ({
-    notifications: Array.from({ length: 20 }, (_, i) => ({
-      id: `notif_${i}`,
-      message: `Notification ${i}`,
-      read: i % 2 === 0,
-      timestamp: new Date(),
-    })),
+    notifications: [],
+    unavailable: true,
+    error: "Notification history is unavailable until a real notification store is connected",
   })),
 });
