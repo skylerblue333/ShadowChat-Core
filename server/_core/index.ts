@@ -9,6 +9,8 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { healthCheck } from "../health";
+import { sdk } from "./sdk";
+import { subscribeToMessages, type Message } from "../realtime";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -39,6 +41,35 @@ async function startServer() {
   registerOAuthRoutes(app);
   app.get("/health", async (_request, response) => {
     response.status(200).json(await healthCheck());
+  });
+  app.get("/api/messages/stream", async (request, response) => {
+    const user = await sdk.authenticateRequest(request).catch(() => null);
+    const participantId = Number(request.query.participantId);
+    if (!user) {
+      response.status(401).json({ error: "Authentication required" });
+      return;
+    }
+    if (!Number.isInteger(participantId) || participantId < 1 || participantId === user.id) {
+      response.status(400).json({ error: "A different participantId is required" });
+      return;
+    }
+    response.writeHead(200, {
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Content-Type": "text/event-stream",
+      "X-Accel-Buffering": "no",
+    });
+    response.write("event: ready\\ndata: {}\\n\\n");
+    const sendMessage = (message: Message) => {
+      if (message.senderId !== participantId && message.recipientId !== participantId) return;
+      response.write(`event: message\\ndata: ${JSON.stringify(message)}\\n\\n`);
+    };
+    const unsubscribe = subscribeToMessages(user.id, sendMessage);
+    const heartbeat = setInterval(() => response.write(": heartbeat\\n\\n"), 25_000);
+    request.on("close", () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+    });
   });
   // tRPC API
   app.use(

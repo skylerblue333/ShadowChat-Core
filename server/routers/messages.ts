@@ -5,6 +5,7 @@ import { directMessages, users } from "../../drizzle/schema";
 import { createMessageInput } from "../messaging-contract";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { publishDirectMessage } from "../realtime";
 
 const listMessagesInput = z.object({
   participantId: z.number().int().positive(),
@@ -48,6 +49,7 @@ export const messagesRouter = router({
       if (message.length === 0) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Message was not persisted" });
       }
+      publishDirectMessage(message[0]);
       return message[0];
     }),
 
