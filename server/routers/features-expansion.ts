@@ -8,16 +8,16 @@ import { z } from "zod";
 
 export const featuresExpansionRouter = router({
   // ===== AI & AUTOMATION (100+ features) =====
-  aiChat: publicProcedure.input(z.object({ message: z.string() })).query(async ({ input }) => ({ response: "AI response to: " + input.message })),
-  aiImage: publicProcedure.input(z.object({ prompt: z.string() })).query(async ({ input }) => ({ url: "image_" + input.prompt })),
-  aiVideo: publicProcedure.input(z.object({ script: z.string() })).query(async ({ input }) => ({ videoUrl: "video_" + input.script })),
-  aiAudio: publicProcedure.input(z.object({ text: z.string() })).query(async ({ input }) => ({ audioUrl: "audio_" + input.text })),
+  aiChat: publicProcedure.input(z.object({ message: z.string().min(1) })).query(async () => ({ response: null as string | null, unavailable: true, error: "AI chat is unavailable in this compatibility router; use the verified HopeAI service" })),
+  aiImage: publicProcedure.input(z.object({ prompt: z.string().min(1) })).query(async () => ({ url: null as string | null, unavailable: true, error: "Image generation is unavailable until a verified media provider is configured" })),
+  aiVideo: publicProcedure.input(z.object({ script: z.string().min(1) })).query(async () => ({ videoUrl: null as string | null, unavailable: true, error: "Video generation is unavailable until a verified media provider is configured" })),
+  aiAudio: publicProcedure.input(z.object({ text: z.string().min(1) })).query(async () => ({ audioUrl: null as string | null, unavailable: true, error: "Audio generation is unavailable until a verified media provider is configured" })),
   aiCode: publicProcedure.input(z.object({ description: z.string() })).query(async ({ input }) => ({ code: "// " + input.description })),
-  aiTranslate: publicProcedure.input(z.object({ text: z.string(), language: z.string() })).query(async ({ input }) => ({ translated: input.text })),
+  aiTranslate: publicProcedure.input(z.object({ text: z.string().min(1), language: z.string().min(1) })).query(async () => ({ translated: null as string | null, unavailable: true, error: "Translation is unavailable until a verified translation service is configured" })),
   aiSummarize: publicProcedure.input(z.object({ text: z.string() })).query(async ({ input }) => ({ summary: input.text.substring(0, 100) })),
   aiAnalyze: publicProcedure.input(z.object({ data: z.string() })).query(async ({ input }) => ({ analysis: "Analysis of " + input.data })),
-  aiPredict: publicProcedure.input(z.object({ input: z.string() })).query(async ({ input }) => ({ prediction: "Prediction: " + input.input })),
-  aiOptimize: publicProcedure.input(z.object({ code: z.string() })).query(async ({ input }) => ({ optimized: input.code })),
+  aiPredict: publicProcedure.input(z.object({ input: z.string().min(1) })).query(async () => ({ prediction: null as string | null, unavailable: true, error: "Prediction is unavailable until a validated model and evidence source are configured" })),
+  aiOptimize: publicProcedure.input(z.object({ code: z.string().min(1) })).query(async () => ({ optimized: null as string | null, unavailable: true, error: "Code optimization is unavailable until a validated model workflow is configured" })),
 
   // ===== E-COMMERCE (150+ features) =====
   productSearch: publicProcedure.input(z.object({ query: z.string() })).query(async ({ input }) => ({ results: [] })),
