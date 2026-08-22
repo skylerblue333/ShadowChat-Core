@@ -152,15 +152,15 @@ export const rulesEngineRouter = router({
 
   // ===== SECURITY RULES =====
   validateLogin: publicProcedure
-    .input(z.object({ email: z.string(), password: z.string() }))
-    .query(async ({ input }) => {
-      return {
-        isValid: input.email.includes("@") && input.password.length >= 6,
-        requiresMFA: false,
-        requiresCaptcha: false,
-        sessionDuration: 86400, // 24 hours
-      };
-    }),
+    .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+    .query(async () => ({
+      isValid: false,
+      requiresMFA: null as boolean | null,
+      requiresCaptcha: null as boolean | null,
+      sessionDuration: null as number | null,
+      unavailable: true,
+      error: "Login validation is unavailable here; authentication must be performed by the server auth flow",
+    })),
 
   // ===== RATE LIMITING RULES =====
   checkRateLimit: protectedProcedure
@@ -176,8 +176,10 @@ export const rulesEngineRouter = router({
 
       return {
         limit: limits[input.action] || 100,
-        remaining: Math.floor(Math.random() * 100),
-        resetTime: new Date(Date.now() + 86400000).toISOString(),
+        remaining: null as number | null,
+        resetTime: null as string | null,
+        unavailable: true,
+        error: "Rate-limit state is unavailable until backed by server-side request counters",
       };
     }),
 
