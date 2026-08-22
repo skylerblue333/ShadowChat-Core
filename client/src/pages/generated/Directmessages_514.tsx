@@ -1,115 +1,81 @@
-// @ts-nocheck
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-/* injected loose stubs so generated UI renders without a real backend */
-const trpc: any = new Proxy({}, { get: () => new Proxy({}, { get: () => () => ({ data: undefined, isLoading: false, isPending: false, isError: false, error: null, refetch: () => {}, mutate: () => {}, mutateAsync: async () => ({}) }) }) });
-const useQuery: any = () => ({ data: undefined, isLoading: false, isPending: false, isError: false, error: null, refetch: () => {} });
-const useMutation: any = () => ({ mutate: () => {}, mutateAsync: async () => ({}), isLoading: false, isPending: false, isError: false, isSuccess: false, error: null, data: undefined, reset: () => {} });
-const useQueryClient: any = () => ({ invalidateQueries: () => {}, setQueryData: () => {} });
-
-// AUTO-GENERATED DRAFT SCREEN: DirectMessages
-
-/* --- injected local data stubs (replaces non-existent backend hooks) --- */
-function useStubQuery<T = any>(initial?: T) {
-  return { data: initial as T, isLoading: false, isPending: false, isError: false, error: null as any, refetch: () => {} };
-}
-function useStubMutation<T = any>() {
-  return {
-    mutate: (_v?: any) => {}, mutateAsync: async (_v?: any) => ({} as T),
-    isLoading: false, isPending: false, isError: false, isSuccess: false, error: null as any, data: undefined as any, reset: () => {},
-  };
-}
-/* ----------------------------------------------------------------------- */
-
-
-interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  timestamp: string;
-}
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { trpc } from "@/lib/trpc";
 
 interface DirectMessagesProps {
   userId: string;
 }
 
-const DirectMessages: React.FC<any> = ({ userId }) => {
-  const [messages, setMessages] = React.useState<Message[]>([]);
-  const [newMessage, setNewMessage] = React.useState<string>('');
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [error, setError] = React.useState<string | null>(null);
+const DirectMessages: React.FC<DirectMessagesProps> = ({ userId }) => {
+  const participantId = Number(userId);
+  const validParticipant = Number.isInteger(participantId) && participantId > 0;
+  const [newMessage, setNewMessage] = React.useState("");
+  const utils = trpc.useUtils();
+  const conversation = trpc.messages.conversation.useQuery(
+    { participantId, limit: 50 },
+    { enabled: validParticipant },
+  );
+  const sendMessage = trpc.messages.send.useMutation({
+    onSuccess: async () => {
+      setNewMessage("");
+      await utils.messages.conversation.invalidate({ participantId, limit: 50 });
+    },
+  });
 
-  // Mock tRPC-like data fetching
-  React.useEffect(() => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      if (Math.random() > 0.8) { // Simulate error 20% of the time
-        setError('Failed to load messages.');
-        setMessages([]);
-      } else {
-        setMessages([
-          { id: '1', sender: 'Alice', content: 'Hey there!', timestamp: '10:00 AM' },
-          { id: '2', sender: 'You', content: 'Hi Alice!', timestamp: '10:01 AM' },
-          { id: '3', sender: 'Alice', content: 'How are you?', timestamp: '10:02 AM' },
-        ]);
-        setError(null);
-      }
-      setIsLoading(false);
-    }, 1000);
-  }, [userId]);
-
-  const handleSendMessage = () => {
-    if (newMessage.trim() === '') return;
-    const message: Message = {
-      id: String(messages.length + 1),
-      sender: 'You',
-      content: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-    setMessages([...messages, message]);
-    setNewMessage('');
+  const handleSendMessage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const content = newMessage.trim();
+    if (!validParticipant || content.length === 0 || sendMessage.isPending) return;
+    sendMessage.mutate({ recipientId: participantId, content });
   };
 
+  const messages = conversation.data ?? [];
+
   return (
-    <Card className="w-full max-w-md mx-auto flex flex-col h-[500px] dark:bg-gray-900 dark:text-gray-100">
+    <Card className="mx-auto flex h-[500px] w-full max-w-md flex-col dark:bg-gray-900 dark:text-gray-100">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg font-semibold">Direct Messages</CardTitle>
         <div className="flex items-center space-x-2">
           <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>U{participantId || "?"}</AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium">User {userId}</span>
+          <span className="text-sm font-medium">User {userId || "?"}</span>
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <p>Loading messages...</p>
+        {!validParticipant ? (
+          <div className="flex h-full items-center justify-center p-4 text-center text-sm text-muted-foreground">
+            Select a valid conversation participant.
           </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full text-red-500">
-            <p>{error}</p>
+        ) : conversation.isPending ? (
+          <div className="flex h-full items-center justify-center">Loading messages...</div>
+        ) : conversation.isError ? (
+          <div className="flex h-full items-center justify-center p-4 text-center text-red-500">
+            Unable to load this conversation. Please try again.
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center p-4 text-center text-muted-foreground">
+            No messages yet. Start the conversation below.
           </div>
         ) : (
           <ScrollArea className="h-full p-4">
             <div className="space-y-4">
-              {messages.map((msg) => (
+              {messages.map((message) => (
                 <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}
+                  key={message.id}
+                  className={`flex ${message.senderId === participantId ? "justify-start" : "justify-end"}`}
                 >
                   <div
-                    className={`max-w-[70%] p-3 rounded-lg ${msg.sender === 'You' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}
+                    className={`max-w-[70%] rounded-lg p-3 ${message.senderId === participantId ? "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100" : "bg-blue-600 text-white"}`}
                   >
-                    <p className="text-sm">{msg.content}</p>
-                    <span className="text-xs opacity-75 mt-1 block text-right">{msg.timestamp}</span>
+                    <p className="text-sm">{message.content}</p>
+                    <span className="mt-1 block text-right text-xs opacity-75">
+                      {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -117,22 +83,21 @@ const DirectMessages: React.FC<any> = ({ userId }) => {
           </ScrollArea>
         )}
       </CardContent>
-      <div className="p-4 border-t dark:border-gray-700 flex items-center space-x-2">
+      <form className="flex items-center space-x-2 border-t p-4 dark:border-gray-700" onSubmit={handleSendMessage}>
         <Input
+          aria-label="Message"
+          className="flex-1 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          disabled={!validParticipant || sendMessage.isPending}
+          maxLength={2000}
+          onChange={(event) => setNewMessage(event.target.value)}
           placeholder="Type your message..."
-          className="flex-1 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700"
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              handleSendMessage();
-            }
-          }}
         />
-        <Button onClick={handleSendMessage} className="dark:bg-blue-700 dark:hover:bg-blue-600">
-          Send
+        <Button disabled={!validParticipant || newMessage.trim().length === 0 || sendMessage.isPending} type="submit">
+          {sendMessage.isPending ? "Sending..." : "Send"}
         </Button>
-      </div>
+      </form>
+      {sendMessage.isError && <p className="px-4 pb-3 text-sm text-red-500">Message could not be sent. Try again.</p>}
     </Card>
   );
 };
