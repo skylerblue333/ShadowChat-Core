@@ -287,40 +287,17 @@ export const agentsRouter = router({
       amount: z.number(),
     }))
     .mutation(async ({ input }) => {
-      const strategies = {
-        aggressive: { multiplier: 3, duration: 1, buyPressure: 0.9 },
-        moderate: { multiplier: 2, duration: 2, buyPressure: 0.7 },
-        conservative: { multiplier: 1.5, duration: 3, buyPressure: 0.5 },
-      };
-      const strat = strategies[input.strategy];
-
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are Stounula Economic Manager. Generate a coin pump strategy for ${input.coinSymbol} with ${input.strategy} approach. Target: ${input.amount} units. Provide buy signals, volume targets, and price targets.`,
-          } as any,
-          {
-            role: "user",
-            content: `Execute ${input.strategy} pump strategy for ${input.coinSymbol}. Amount: ${input.amount}. Multiplier: ${strat.multiplier}x. Duration: ${strat.duration} hours. Buy Pressure: ${strat.buyPressure * 100}%`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const strategy = typeof contentMsg === "string" ? contentMsg : "Strategy generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         coin: input.coinSymbol,
         strategy: input.strategy,
         amount: input.amount,
-        expectedMultiplier: strat.multiplier,
-        duration: strat.duration,
-        buyPressure: strat.buyPressure,
-        executedBy: "Stounula",
-        strategyDetails: strategy,
-        timestamp: new Date(),
+        expectedMultiplier: null as number | null,
+        duration: null as number | null,
+        buyPressure: null as number | null,
+        strategyDetails: null as string | null,
+        error: "Coin-pump strategies and autonomous market execution are unavailable; no market manipulation or trading operation is performed",
       };
     }),
 
