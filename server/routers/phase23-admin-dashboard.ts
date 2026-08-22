@@ -15,19 +15,14 @@ export const phase23AdminDashboardRouter = router({
 
   // User management
   listUsers: protectedProcedure
-    .input(z.object({ limit: z.number().default(100), offset: z.number().default(0) }))
-    .query(async ({ input, ctx }) => {
+    .input(z.object({ limit: z.number().int().positive().max(100).default(100), offset: z.number().int().min(0).default(0) }))
+    .query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Admin only");
       return {
-        users: Array.from({ length: input.limit }, (_, i) => ({
-          id: `user_${i}`,
-          email: `user${i}@example.com`,
-          role: i % 100 === 0 ? "admin" : "user",
-          createdAt: new Date(),
-          lastActive: new Date(),
-          status: "active",
-        })),
-        total: 125000,
+        users: [],
+        total: 0,
+        unavailable: true,
+        error: "User administration is unavailable until real users-table pagination and privacy-safe fields are configured",
       };
     }),
 
