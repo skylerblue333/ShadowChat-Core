@@ -118,70 +118,22 @@ export const notificationsRouter = router({
     })),
 
   // ===== GET MARKETPLACE ALERTS =====
-  getMarketplaceAlerts: protectedProcedure.query(async ({ ctx }) => {
-    return {
-      userId: ctx.user.id,
-      alerts: [
-        {
-          id: 1,
-          type: "new_listing",
-          message: "New AI Trading Bot listed - $2,500",
-          seller: "TechMaster",
-          rating: 4.9,
-          timestamp: new Date(Date.now() - 5 * 60000),
-        },
-        {
-          id: 2,
-          type: "price_drop",
-          message: "Your watched item dropped 15%",
-          item: "Machine Learning Course",
-          oldPrice: 199,
-          newPrice: 169,
-          timestamp: new Date(Date.now() - 30 * 60000),
-        },
-        {
-          id: 3,
-          type: "seller_review",
-          message: "Your buyer left 5-star review",
-          reviewer: "Happy Customer",
-          timestamp: new Date(Date.now() - 1 * 3600000),
-        },
-      ],
-      totalAlerts: 3,
-    };
-  }),
+  getMarketplaceAlerts: protectedProcedure.query(async ({ ctx }) => ({
+    userId: ctx.user.id,
+    alerts: [],
+    totalAlerts: 0,
+    unavailable: true,
+    reason: "Marketplace event notifications are not configured",
+  })),
 
   // ===== GET SOCIAL ALERTS =====
-  getSocialAlerts: protectedProcedure.query(async ({ ctx }) => {
-    return {
-      userId: ctx.user.id,
-      alerts: [
-        {
-          id: 1,
-          type: "new_follower",
-          user: "Alex Rivera",
-          compatibility: 0.98,
-          timestamp: new Date(Date.now() - 5 * 60000),
-        },
-        {
-          id: 2,
-          type: "post_like",
-          user: "Sarah Chen",
-          post: "My latest AI project...",
-          likes: 247,
-          timestamp: new Date(Date.now() - 15 * 60000),
-        },
-        {
-          id: 3,
-          type: "comment",
-          user: "Dev Community",
-          message: "Great insights on machine learning!",
-          timestamp: new Date(Date.now() - 30 * 60000),
-        },
-      ],
-      totalAlerts: 3,
-    };
-  }),
+  getSocialAlerts: protectedProcedure.query(async ({ ctx }) => ({
+    userId: ctx.user.id,
+    alerts: [],
+    totalAlerts: 0,
+    unavailable: true,
+    reason: "Social event notifications are not configured",
+  })),
 
   // ===== CLEAR ALL NOTIFICATIONS =====
   clearAllNotifications: protectedProcedure.mutation(async ({ ctx }) => {
