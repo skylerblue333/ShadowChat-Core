@@ -2,61 +2,69 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 
 export const earnLearnRouter = router({
-  // Get course rewards
-  getCourseRewards: protectedProcedure.query(async ({ ctx }) => {
-    return [
-      { courseId: 1, title: "Blockchain Basics", reward: 500, completed: true },
-      { courseId: 2, title: "Smart Contracts", reward: 1000, completed: true },
-      { courseId: 3, title: "DeFi Advanced", reward: 2000, completed: false },
-    ];
-  }),
+  getCourseRewards: protectedProcedure.query(async () => ({
+    rewards: [],
+    unavailable: true,
+    error: "Course rewards are unavailable until verified course completion and reward accounting are configured",
+  })),
 
-  // Complete course
   completeCourse: protectedProcedure
-    .input(z.object({ courseId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, reward: 500, token: "SKY444" };
-    }),
+    .input(z.object({ courseId: z.number().int().positive() }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      reward: null as number | null,
+      token: null as string | null,
+      error: "Course completion rewards are unavailable until real enrollment and completion records are configured",
+    })),
 
-  // Get certifications
-  getCertifications: protectedProcedure.query(async ({ ctx }) => {
-    return [
-      { id: 1, name: "Blockchain Developer", issued: "2026-01-15", verified: true },
-      { id: 2, name: "Crypto Trader", issued: "2026-02-20", verified: true },
-    ];
-  }),
+  getCertifications: protectedProcedure.query(async () => ({
+    certifications: [],
+    unavailable: true,
+    error: "Certifications are unavailable until verified issuance and credential storage are configured",
+  })),
 
-  // Claim certification reward
   claimCertificationReward: protectedProcedure
-    .input(z.object({ certId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, reward: 5000, token: "SKY444" };
-    }),
+    .input(z.object({ certId: z.number().int().positive() }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      reward: null as number | null,
+      token: null as string | null,
+      error: "Certification rewards are unavailable until verified credentials and reward accounting are configured",
+    })),
 
-  // Get learning streak
-  getLearningStreak: protectedProcedure.query(async ({ ctx }) => {
-    return { streak: 15, totalLearningHours: 120, nextReward: 250 };
-  }),
+  getLearningStreak: protectedProcedure.query(async () => ({
+    streak: null as number | null,
+    totalLearningHours: null as number | null,
+    nextReward: null as number | null,
+    unavailable: true,
+    error: "Learning streaks are unavailable until real activity events are persisted",
+  })),
 
-  // Claim daily learning bonus
-  claimDailyLearningBonus: protectedProcedure.mutation(async ({ ctx }) => {
-    return { success: true, bonus: 100, token: "SKY444" };
-  }),
+  claimDailyLearningBonus: protectedProcedure.mutation(async () => ({
+    success: false,
+    unavailable: true,
+    bonus: null as number | null,
+    token: null as string | null,
+    error: "Daily learning bonuses are unavailable until persistent eligibility and reward accounting are configured",
+  })),
 
-  // Get referral earnings
-  getReferralEarnings: protectedProcedure.query(async ({ ctx }) => {
-    return {
-      totalEarned: 5000,
-      pending: 1200,
-      referrals: 12,
-      commissionRate: 0.1,
-    };
-  }),
+  getReferralEarnings: protectedProcedure.query(async () => ({
+    totalEarned: null as number | null,
+    pending: null as number | null,
+    referrals: null as number | null,
+    commissionRate: null as number | null,
+    unavailable: true,
+    error: "Referral earnings are unavailable until verified attribution and ledger data are configured",
+  })),
 
-  // Withdraw earnings
   withdrawEarnings: protectedProcedure
-    .input(z.object({ amount: z.number(), token: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, txHash: `0x${Math.random().toString(16).substr(2)}` };
-    }),
+    .input(z.object({ amount: z.number().positive(), token: z.string().min(1) }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      txHash: null as string | null,
+      error: "Earnings withdrawal is unavailable until a verified ledger, signer, and network integration are configured",
+    })),
 });
