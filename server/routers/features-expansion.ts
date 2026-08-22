@@ -92,7 +92,14 @@ export const featuresExpansionRouter = router({
   // ===== CRYPTO & BLOCKCHAIN (100+ features) =====
   walletConnect: protectedProcedure.input(z.object({ address: z.string() })).mutation(async ({ input }) => ({ success: true })),
   walletBalance: publicProcedure.input(z.object({ address: z.string() })).query(async ({ input }) => ({ balance: 0 })),
-  transactionSend: protectedProcedure.input(z.object({ to: z.string(), amount: z.number() })).mutation(async ({ input }) => ({ txHash: "0x" })),
+  transactionSend: protectedProcedure.input(z.object({ to: z.string().min(1), amount: z.number().positive() })).mutation(async ({ input }) => ({
+    txHash: null as string | null,
+    to: input.to,
+    amount: input.amount,
+    success: false,
+    unavailable: true,
+    error: "Blockchain transaction submission is unavailable until a verified signer and network integration are configured",
+  })),
   transactionHistory: publicProcedure.input(z.object({ address: z.string() })).query(async ({ input }) => ({ transactions: [] })),
   nftMint: protectedProcedure.input(z.object({ name: z.string() })).mutation(async ({ input }) => ({ nftId: 1 })),
   nftTransfer: protectedProcedure.input(z.object({ nftId: z.number(), to: z.string() })).mutation(async ({ input }) => ({ success: true })),
