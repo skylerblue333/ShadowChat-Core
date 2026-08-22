@@ -15,12 +15,14 @@ export const phase21RealtimeRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         sessionId: input.sessionId,
         channel: input.channel,
         userId: ctx.user.id,
-        connectedAt: new Date(),
-        expiresAt: new Date(Date.now() + 3600000), // 1 hour
+        connectedAt: null as Date | null,
+        expiresAt: null as Date | null,
+        error: "WebSocket connections are unavailable until a verified realtime transport and session registry are configured",
       };
     }),
 
