@@ -132,18 +132,13 @@ export const phase23AdminDashboardRouter = router({
 
   // Audit logs
   getAuditLogs: protectedProcedure
-    .input(z.object({ limit: z.number().default(100) }))
-    .query(async ({ input, ctx }) => {
+    .input(z.object({ limit: z.number().int().positive().max(100).default(100) }))
+    .query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Admin only");
       return {
-        logs: Array.from({ length: input.limit }, (_, i) => ({
-          id: `log_${i}`,
-          admin: ctx.user.id,
-          action: ["user_ban", "content_remove", "config_update"][Math.floor(Math.random() * 3)],
-          target: `entity_${i}`,
-          timestamp: new Date(),
-          details: "Action details",
-        })),
+        logs: [],
+        unavailable: true,
+        error: "Audit logs are unavailable until administrative events are persisted to a verified audit store",
       };
     }),
 
@@ -151,14 +146,9 @@ export const phase23AdminDashboardRouter = router({
   getPerformanceMetrics: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin") throw new Error("Admin only");
     return {
-      metrics: {
-        apiResponseTime: "85ms",
-        databaseQueryTime: "42ms",
-        cacheHitRate: "92%",
-        errorRate: "0.01%",
-        cpuUsage: "35%",
-        memoryUsage: "62%",
-      },
+      metrics: null,
+      unavailable: true,
+      error: "Performance metrics are unavailable until measured application, database, and process telemetry is configured",
     };
   }),
 });
