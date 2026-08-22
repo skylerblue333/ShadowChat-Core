@@ -79,37 +79,30 @@ export const walletRouter = router({
         type: z.enum(["mine", "stake", "burn", "swap", "transfer"]),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      // In production, this would:
-      // 1. Validate transaction with smart contract
-      // 2. Sign with user's wallet
-      // 3. Submit to blockchain
-      // 4. Return transaction hash
-
-      return {
-        success: true,
-        txHash: `0x${Math.random().toString(16).substr(2)}`,
-        from: input.from,
-        to: input.to,
-        amount: input.amount,
-        token: input.token,
-        type: input.type,
-        status: "pending",
-      };
-    }),
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      txHash: null as string | null,
+      from: input.from,
+      to: input.to,
+      amount: input.amount,
+      token: input.token,
+      type: input.type,
+      status: "unavailable" as const,
+      error: "Blockchain transaction submission is unavailable until a verified signer and network integration are configured",
+    })),
 
   // Verify transaction on blockchain
   verifyTransaction: protectedProcedure
     .input(z.object({ txHash: z.string() }))
-    .query(async ({ ctx, input }) => {
-      // In production, this would query blockchain for transaction status
-      return {
-        txHash: input.txHash,
-        status: "confirmed",
-        blockNumber: 18500000,
-        confirmations: 12,
-      };
-    }),
+    .query(async ({ input }) => ({
+      txHash: input.txHash,
+      status: "unavailable" as const,
+      blockNumber: null as number | null,
+      confirmations: null as number | null,
+      unavailable: true,
+      error: "Blockchain transaction verification is unavailable until a verified network RPC is configured",
+    })),
 
   // Disconnect wallet
   disconnectWallet: protectedProcedure.mutation(async ({ ctx }) => {
