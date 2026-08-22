@@ -105,11 +105,13 @@ export const agentsRouter = router({
       }
 
       return {
-        success: true,
-        ticketId: randomUUID(),
+        success: false,
+        unavailable: true,
+        ticketId: null as string | null,
         priority,
         category: input.category,
-        createdAt: new Date(),
+        createdAt: null as Date | null,
+        error: "Support ticket creation is unavailable until triage results are persisted to a verified ticket store",
       };
     }),
 
