@@ -76,30 +76,42 @@ export const integrationsRouter = router({
 
   // ===== EMAIL INTEGRATIONS =====
   sendgridEmail: protectedProcedure
-    .input(z.object({ to: z.string(), subject: z.string(), body: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, messageId: "msg_" + Date.now() };
-    }),
+    .input(z.object({ to: z.string().email(), subject: z.string().min(1), body: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      messageId: null as string | null,
+      error: "Email delivery is unavailable until a verified provider and delivery tracking are configured",
+    })),
 
   // ===== SMS INTEGRATIONS =====
   twilioSMS: protectedProcedure
-    .input(z.object({ to: z.string(), message: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, messageId: "sms_" + Date.now() };
-    }),
+    .input(z.object({ to: z.string().min(1), message: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      messageId: null as string | null,
+      error: "SMS delivery is unavailable until a verified provider and delivery tracking are configured",
+    })),
 
   // ===== VIDEO INTEGRATIONS =====
   youtubeUpload: protectedProcedure
-    .input(z.object({ title: z.string(), description: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, videoId: "yt_" + Date.now() };
-    }),
+    .input(z.object({ title: z.string().min(1), description: z.string() }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      videoId: null as string | null,
+      error: "YouTube upload is unavailable until a verified provider integration and media storage are configured",
+    })),
 
   twitchStream: protectedProcedure
-    .input(z.object({ title: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, streamId: "twitch_" + Date.now() };
-    }),
+    .input(z.object({ title: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      streamId: null as string | null,
+      error: "Twitch streaming is unavailable until a verified provider integration is configured",
+    })),
 
   // ===== ANALYTICS INTEGRATIONS =====
   googleAnalytics: publicProcedure
