@@ -6,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Heart, MessageCircle, Share2, Users } from "lucide-react";
+import DirectMessagesPanel from "@/components/DirectMessagesPanel";
 
 export default function SocialMedia() {
   const { user } = useAuth();
   const [postContent, setPostContent] = useState("");
-  const [activeTab, setActiveTab] = useState<"feed" | "trending" | "profile">("feed");
+  const [activeTab, setActiveTab] = useState<"feed" | "trending" | "profile" | "messages">("feed");
   const [selectedPostForComment, setSelectedPostForComment] = useState<number | null>(null);
   const [commentContent, setCommentContent] = useState("");
 
@@ -85,7 +86,7 @@ export default function SocialMedia() {
 
         {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b border-slate-700">
-          {["feed", "trending", "profile"].map((tab) => (
+          {["feed", "trending", "profile", "messages"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -99,6 +100,9 @@ export default function SocialMedia() {
             </button>
           ))}
         </div>
+
+        {/* Direct messages */}
+        {activeTab === "messages" && user && <DirectMessagesPanel currentUserId={user.id} />}
 
         {/* Feed */}
         {activeTab === "feed" && (
