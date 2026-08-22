@@ -155,17 +155,11 @@ Format as JSON: {score: number, strengths: string[], issues: [{severity: string,
       })
     )
     .mutation(async ({ input }) => {
-      // Store good code patterns for AI training
       return {
-        success: true,
-        message: `Pattern "${input.pattern}" learned and rated ${input.rating}/5`,
-        pattern: {
-          code: input.code,
-          rating: input.rating,
-          pattern: input.pattern,
-          description: input.description,
-          timestamp: new Date().toISOString(),
-        },
+        success: false,
+        unavailable: true,
+        message: "AI pattern training is unavailable until a verified training-data store and retention policy are configured",
+        pattern: null,
       };
     }),
 
