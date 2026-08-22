@@ -83,92 +83,33 @@ export const phase22AiMlRouter = router({
     })),
 
   // Machine learning model performance
-  getModelPerformance: publicProcedure.query(async () => {
-    return {
-      models: [
-        {
-          name: "Price Prediction Model",
-          accuracy: 78.5,
-          precision: 82.3,
-          recall: 75.1,
-          f1Score: 78.6,
-          lastUpdated: new Date(),
-        },
-        {
-          name: "Sentiment Analysis Model",
-          accuracy: 85.2,
-          precision: 87.1,
-          recall: 83.4,
-          f1Score: 85.2,
-          lastUpdated: new Date(),
-        },
-        {
-          name: "Anomaly Detection Model",
-          accuracy: 91.3,
-          precision: 93.2,
-          recall: 89.5,
-          f1Score: 91.3,
-          lastUpdated: new Date(),
-        },
-      ],
-      overallPerformance: 85.0,
-    };
-  }),
+  getModelPerformance: publicProcedure.query(async () => ({
+    models: [],
+    unavailable: true,
+    error: "Model performance is unavailable until versioned models and reproducible evaluation datasets are configured",
+  })),
 
   // Clustering analysis for user segmentation
-  getUserSegments: publicProcedure.query(async () => {
-    return {
-      segments: [
-        {
-          name: "Whale Traders",
-          count: 42,
-          avgPortfolioValue: 500000,
-          characteristics: ["High volume", "Long-term holders"],
-        },
-        {
-          name: "Day Traders",
-          count: 1250,
-          avgPortfolioValue: 25000,
-          characteristics: ["High frequency", "Short-term"],
-        },
-        {
-          name: "Learners",
-          count: 5000,
-          avgPortfolioValue: 1000,
-          characteristics: ["Educational focus", "Low risk"],
-        },
-      ],
-    };
-  }),
+  getUserSegments: publicProcedure.query(async () => ({
+    segments: [],
+    unavailable: true,
+    error: "User segmentation is unavailable until privacy-reviewed behavioral data and a validated clustering pipeline are configured",
+  })),
 
   // Predictive maintenance for system health
-  predictSystemHealth: publicProcedure.query(async () => {
-    return {
-      prediction: {
-        cpuUsage: 45,
-        memoryUsage: 62,
-        databaseHealth: "excellent",
-        apiLatency: 85,
-        predictedIssues: [],
-        maintenanceNeeded: false,
-      },
-      nextCheckIn: new Date(Date.now() + 3600000),
-    };
-  }),
+  predictSystemHealth: publicProcedure.query(async () => ({
+    prediction: null,
+    nextCheckIn: null as Date | null,
+    unavailable: true,
+    error: "System-health prediction is unavailable until measured telemetry and a validated forecasting model are configured",
+  })),
 
   // Feature importance analysis
-  getFeatureImportance: publicProcedure.query(async () => {
-    return {
-      features: [
-        { name: "Trading Volume", importance: 0.28 },
-        { name: "Price Momentum", importance: 0.22 },
-        { name: "Market Sentiment", importance: 0.18 },
-        { name: "User Activity", importance: 0.15 },
-        { name: "Network Effects", importance: 0.12 },
-        { name: "External Factors", importance: 0.05 },
-      ],
-    };
-  }),
+  getFeatureImportance: publicProcedure.query(async () => ({
+    features: [],
+    unavailable: true,
+    error: "Feature importance is unavailable until a versioned model and reproducible training data are configured",
+  })),
 
   // Time series forecasting
   forecastTimeSeries: publicProcedure
