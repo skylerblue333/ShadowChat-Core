@@ -111,22 +111,11 @@ export const walletEnhancedRouter = router({
       walletAddress: z.string(),
       provider: z.enum(WALLET_PROVIDERS),
     }))
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // In production, this would use the provider's signing mechanism
-        const signature = `0x${Buffer.from(input.message).toString("hex")}`;
-        return {
-          success: true,
-          signature,
-          message: input.message,
-          signer: input.walletAddress,
-          provider: input.provider,
-          timestamp: new Date().toISOString(),
-        };
-      } catch (error) {
-        return { success: false, error: "Failed to sign message" };
-      }
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      error: "Wallet signing is unavailable until a verified wallet provider is configured",
+    })),
 
   // Verify signature
   verifySignature: publicProcedure
@@ -135,20 +124,11 @@ export const walletEnhancedRouter = router({
       signature: z.string(),
       walletAddress: z.string(),
     }))
-    .query(async ({ input }) => {
-      try {
-        // In production, this would verify the signature against the wallet address
-        const isValid = input.signature.startsWith("0x");
-        return {
-          isValid,
-          message: input.message,
-          signer: input.walletAddress,
-          timestamp: new Date().toISOString(),
-        };
-      } catch {
-        return { isValid: false };
-      }
-    }),
+    .query(async () => ({
+      isValid: false,
+      unavailable: true,
+      reason: "Signature verification requires a verified chain provider",
+    })),
 
   // Send transaction
   sendTransaction: protectedProcedure
@@ -164,28 +144,11 @@ export const walletEnhancedRouter = router({
         gasLimit: z.number().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const network = Object.values(SUPPORTED_NETWORKS).find(n => n.chainId === input.chainId);
-        return {
-          success: true,
-          txHash: `0x${Math.random().toString(16).substr(2)}`,
-          from: input.from,
-          to: input.to,
-          amount: input.amount,
-          token: input.token,
-          type: input.type,
-          chainId: input.chainId,
-          network: network?.name || "Unknown",
-          status: "pending",
-          gasPrice: input.gasPrice || 0,
-          gasLimit: input.gasLimit || 21000,
-          timestamp: new Date().toISOString(),
-        };
-      } catch (error) {
-        return { success: false, error: "Failed to send transaction" };
-      }
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      error: "Transaction broadcasting is unavailable until a verified chain provider and signer are configured",
+    })),
 
   // Get transaction history
   getTransactionHistory: protectedProcedure
@@ -217,22 +180,12 @@ export const walletEnhancedRouter = router({
       txHash: z.string(),
       chainId: z.number(),
     }))
-    .query(async ({ input }) => {
-      try {
-        // In production, this would query the blockchain
-        return {
-          txHash: input.txHash,
-          status: "confirmed",
-          blockNumber: 18500000,
-          confirmations: 12,
-          chainId: input.chainId,
-          network: Object.values(SUPPORTED_NETWORKS).find(n => n.chainId === input.chainId)?.name,
-          timestamp: new Date().toISOString(),
-        };
-      } catch {
-        return { txHash: input.txHash, status: "unknown" };
-      }
-    }),
+    .query(async ({ input }) => ({
+      txHash: input.txHash,
+      status: "unavailable",
+      unavailable: true,
+      reason: "Transaction verification requires a verified chain provider",
+    })),
 
   // Receive transaction (generate address for receiving)
   generateReceiveAddress: protectedProcedure
@@ -240,15 +193,11 @@ export const walletEnhancedRouter = router({
       token: z.string(),
       chainId: z.number(),
     }))
-    .query(async ({ ctx, input }) => {
-      return {
-        address: `0x${Math.random().toString(16).substr(2)}`,
-        token: input.token,
-        chainId: input.chainId,
-        network: Object.values(SUPPORTED_NETWORKS).find(n => n.chainId === input.chainId)?.name,
-        qrCode: `qr:${input.token}:${input.chainId}`,
-      };
-    }),
+    .query(async () => ({
+      address: null,
+      unavailable: true,
+      reason: "Receive addresses require verified wallet custody infrastructure",
+    })),
 
   // Get supported networks
   getSupportedNetworks: publicProcedure.query(async () => {
