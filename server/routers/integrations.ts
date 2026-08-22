@@ -115,16 +115,22 @@ export const integrationsRouter = router({
 
   // ===== ANALYTICS INTEGRATIONS =====
   googleAnalytics: publicProcedure
-    .input(z.object({ event: z.string() }))
-    .mutation(async ({ input }) => {
-      return { tracked: true, eventId: input.event };
-    }),
+    .input(z.object({ event: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      tracked: false,
+      unavailable: true,
+      eventId: input.event,
+      error: "Analytics tracking is unavailable until a verified provider and event delivery path are configured",
+    })),
 
   mixpanelTrack: publicProcedure
-    .input(z.object({ event: z.string() }))
-    .mutation(async ({ input }) => {
-      return { tracked: true, eventId: input.event };
-    }),
+    .input(z.object({ event: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      tracked: false,
+      unavailable: true,
+      eventId: input.event,
+      error: "Analytics tracking is unavailable until a verified provider and event delivery path are configured",
+    })),
 
   // ===== STORAGE INTEGRATIONS =====
   s3Upload: protectedProcedure
@@ -145,16 +151,22 @@ export const integrationsRouter = router({
 
   // ===== NOTIFICATION INTEGRATIONS =====
   pushNotification: protectedProcedure
-    .input(z.object({ userId: z.number(), message: z.string() }))
-    .mutation(async ({ input }) => {
-      return { sent: true, notificationId: "notif_" + Date.now() };
-    }),
+    .input(z.object({ userId: z.number().int().positive(), message: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      sent: false,
+      unavailable: true,
+      notificationId: null as string | null,
+      error: "Push notification delivery is unavailable until a verified provider and user authorization policy are configured",
+    })),
 
   slackNotification: publicProcedure
-    .input(z.object({ channel: z.string(), message: z.string() }))
-    .mutation(async ({ input }) => {
-      return { sent: true, messageId: "slack_" + Date.now() };
-    }),
+    .input(z.object({ channel: z.string().min(1), message: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      sent: false,
+      unavailable: true,
+      messageId: null as string | null,
+      error: "Slack notification delivery is unavailable until a verified webhook and delivery tracking are configured",
+    })),
 
   // ===== WEBHOOK MANAGEMENT =====
   registerWebhook: protectedProcedure
@@ -168,10 +180,13 @@ export const integrationsRouter = router({
     })),
 
   triggerWebhook: publicProcedure
-    .input(z.object({ webhookId: z.string(), data: z.any() }))
-    .mutation(async ({ input }) => {
-      return { triggered: true, webhookId: input.webhookId };
-    }),
+    .input(z.object({ webhookId: z.string().min(1), data: z.unknown() }))
+    .mutation(async ({ input }) => ({
+      triggered: false,
+      unavailable: true,
+      webhookId: input.webhookId,
+      error: "Webhook delivery is unavailable until verified endpoint storage, signing, and retry handling are configured",
+    })),
 
   // ===== API KEY MANAGEMENT =====
   generateAPIKey: protectedProcedure.mutation(async () => ({
@@ -208,10 +223,13 @@ export const integrationsRouter = router({
 
   // ===== MONITORING & LOGGING =====
   logEvent: publicProcedure
-    .input(z.object({ event: z.string(), data: z.any() }))
-    .mutation(async ({ input }) => {
-      return { logged: true, eventId: "log_" + Date.now() };
-    }),
+    .input(z.object({ event: z.string().min(1), data: z.unknown() }))
+    .mutation(async ({ input }) => ({
+      logged: false,
+      unavailable: true,
+      eventId: input.event,
+      error: "Event logging is unavailable until a structured server-side event store is configured",
+    })),
 
   getSystemHealth: publicProcedure.query(async () => ({
     status: "unavailable" as const,
