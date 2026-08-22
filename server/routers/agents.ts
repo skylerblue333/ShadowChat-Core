@@ -1,4 +1,5 @@
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { invokeLLM } from "../_core/llm";
 
@@ -105,7 +106,7 @@ export const agentsRouter = router({
 
       return {
         success: true,
-        ticketId: Math.random().toString(36).substr(2, 9),
+        ticketId: randomUUID(),
         priority,
         category: input.category,
         createdAt: new Date(),
