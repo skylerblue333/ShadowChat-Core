@@ -106,7 +106,9 @@ export const tradingBotsRouter = router({
         quantity: z.number(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      return { success: true, tradeId: Math.floor(Math.random() * 100000) };
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      error: "Trade execution is unavailable until a verified exchange integration is configured",
+    })),
 });
