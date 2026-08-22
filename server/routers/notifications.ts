@@ -98,11 +98,12 @@ export const notificationsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         userId: ctx.user.id,
-        subscribed: true,
+        subscribed: false,
         notificationTypes: input.types,
-        message: "Subscribed to notifications",
+        message: "Notification subscriptions are unavailable until preferences are persisted and a delivery provider is configured",
       };
     }),
 
