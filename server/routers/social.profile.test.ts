@@ -5,6 +5,7 @@ const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     update: vi.fn(),
     select: vi.fn(),
+    insert: vi.fn(),
   },
 }));
 
@@ -57,5 +58,17 @@ describe("social.updateProfile", () => {
   it("rejects an empty profile update", async () => {
     const caller = socialRouter.createCaller(authCtx());
     await expect(caller.updateProfile({})).rejects.toThrow("At least one profile field is required");
+  });
+});
+
+describe("social.followUser", () => {
+  it("does not insert a duplicate follow relationship", async () => {
+    const where = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([{ id: 42 }]) });
+    dbMock.select.mockReturnValue({ from: vi.fn().mockReturnValue({ where }) });
+
+    const result = await socialRouter.createCaller(authCtx()).followUser({ userId: 9 });
+
+    expect(result).toEqual({ success: true, alreadyFollowing: true });
+    expect(dbMock.insert).not.toHaveBeenCalled();
   });
 });

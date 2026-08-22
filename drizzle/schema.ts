@@ -1,4 +1,4 @@
-import { boolean, int, index, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, double, json, date, decimal } from "drizzle-orm/mysql-core";
+import { boolean, int, index, uniqueIndex, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, double, json, date, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -271,7 +271,9 @@ export const userFollows = mysqlTable("userFollows", {
   followerId: int("followerId").notNull(),
   followingId: int("followingId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, table => ({
+  followerFollowingUnique: uniqueIndex("userFollows_follower_following_unique").on(table.followerId, table.followingId),
+}));
 
 // Per-user post likes (enables real like/unlike toggling)
 export const postLikes = mysqlTable("postLikes", {

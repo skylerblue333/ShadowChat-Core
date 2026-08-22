@@ -141,13 +141,20 @@ export const socialRouter = router({
       if (input.userId === ctx.user!.id) {
         throw new Error("Cannot follow yourself");
       }
-      await db.insert(userFollows).values([
-        {
-          followerId: ctx.user!.id,
-          followingId: input.userId,
-        },
-      ]);
-      return { success: true };
+      const existingFollow = await db
+        .select({ id: userFollows.id })
+        .from(userFollows)
+        .where(and(eq(userFollows.followerId, ctx.user!.id), eq(userFollows.followingId, input.userId)))
+        .limit(1);
+      if (existingFollow.length > 0) {
+        return { success: true, alreadyFollowing: true };
+      }
+
+      await db.insert(userFollows).values({
+        followerId: ctx.user!.id,
+        followingId: input.userId,
+      });
+      return { success: true, alreadyFollowing: false };
     }),
 
   // Unfollow user (actually deletes the follow record)
