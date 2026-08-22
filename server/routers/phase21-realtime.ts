@@ -62,20 +62,15 @@ export const phase21RealtimeRouter = router({
       sessionId: z.string(),
       role: z.enum(["editor", "viewer", "moderator"]).default("editor"),
     }))
-    .mutation(async ({ input, ctx }) => {
-      return {
-        sessionId: input.sessionId,
-        userId: ctx.user.id,
-        role: input.role,
-        joinedAt: new Date(),
-        activeUsers: Math.floor(Math.random() * 10) + 1,
-        permissions: {
-          canEdit: input.role === "editor" || input.role === "moderator",
-          canComment: true,
-          canInvite: input.role === "moderator",
-        },
-      };
-    }),
+    .mutation(async ({ input, ctx }) => ({
+      sessionId: input.sessionId,
+      userId: ctx.user.id,
+      role: input.role,
+      joinedAt: null as Date | null,
+      activeUsers: null as number | null,
+      unavailable: true,
+      error: "Collaboration sessions are unavailable until a verified realtime transport and session store are configured",
+    })),
 
   // Persisted social feed. Realtime transport can be layered on top of this stable source.
   getRealtimeFeed: protectedProcedure
@@ -121,20 +116,13 @@ export const phase21RealtimeRouter = router({
       game: z.string(),
       limit: z.number().default(10),
     }))
-    .query(async ({ input }) => {
-      return {
-        game: input.game,
-        leaderboard: Array.from({ length: input.limit }, (_, i) => ({
-          rank: i + 1,
-          username: `Player${i + 1}`,
-          score: 10000 - i * 1000,
-          level: 50 - i * 2,
-          lastUpdated: new Date(Date.now() - Math.random() * 300000),
-          badge: i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "",
-        })),
-        updateFrequency: "10s",
-      };
-    }),
+    .query(async ({ input }) => ({
+      game: input.game,
+      leaderboard: [],
+      updateFrequency: null as string | null,
+      unavailable: true,
+      error: "Realtime leaderboards are unavailable until verified game-score persistence is configured",
+    })),
 
   // Broadcast notification to users
   broadcastNotification: protectedProcedure
