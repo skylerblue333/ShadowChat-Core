@@ -20,18 +20,6 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-/* ===================== DIRECT MESSAGES ===================== */
-export const messages = mysqlTable("messages", {
-  id: int("id").autoincrement().primaryKey(),
-  senderId: int("senderId").notNull(),
-  recipientId: int("recipientId").notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  readAt: timestamp("readAt"),
-});
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = typeof messages.$inferInsert;
-
 /* ===================== SKY SCHOOL ===================== */
 export const courses = mysqlTable("courses", {
   id: int("id").autoincrement().primaryKey(),
