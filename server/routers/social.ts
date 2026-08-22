@@ -245,14 +245,27 @@ export const socialRouter = router({
     }),
 
   updateProfile: protectedProcedure
-    .input(z.object({ bio: z.string().optional(), avatarUrl: z.string().optional() }))
+    .input(
+      z.object({
+        bio: z.string().max(500).optional(),
+        avatarUrl: z.string().url().max(2048).optional(),
+      }).refine((input) => input.bio !== undefined || input.avatarUrl !== undefined, {
+        message: "At least one profile field is required",
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      
-      // In production, would update user record with bio/avatar
-      // For now, just return success
-      return { success: true, message: "Profile updated" };
+
+      await db.update(users).set(input).where(eq(users.id, ctx.user!.id));
+      const updated = await db
+        .select({ id: users.id, bio: users.bio, avatarUrl: users.avatarUrl })
+        .from(users)
+        .where(eq(users.id, ctx.user!.id))
+        .then((rows) => rows[0]);
+
+      if (!updated) throw new Error("User not found");
+      return { success: true, profile: updated };
     }),
 
   getUserStats: publicProcedure
