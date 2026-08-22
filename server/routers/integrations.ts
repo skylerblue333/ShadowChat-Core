@@ -9,42 +9,60 @@ import { z } from "zod";
 export const integrationsRouter = router({
   // ===== PAYMENT INTEGRATIONS =====
   stripeWebhook: publicProcedure
-    .input(z.object({ event: z.string() }))
-    .mutation(async ({ input }) => {
-      return { processed: true, eventId: input.event };
-    }),
+    .input(z.object({ event: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      processed: false,
+      unavailable: true,
+      eventId: input.event,
+      error: "Stripe webhook processing is unavailable until signature verification and idempotent event storage are configured",
+    })),
 
   paypalWebhook: publicProcedure
-    .input(z.object({ event: z.string() }))
-    .mutation(async ({ input }) => {
-      return { processed: true, eventId: input.event };
-    }),
+    .input(z.object({ event: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      processed: false,
+      unavailable: true,
+      eventId: input.event,
+      error: "PayPal webhook processing is unavailable until signature verification and idempotent event storage are configured",
+    })),
 
   // ===== SOCIAL INTEGRATIONS =====
   twitterShare: protectedProcedure
-    .input(z.object({ content: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, tweetId: "tweet_" + Date.now() };
-    }),
+    .input(z.object({ content: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      tweetId: null as string | null,
+      error: "Twitter sharing is unavailable until a verified provider integration is configured",
+    })),
 
   facebookShare: protectedProcedure
-    .input(z.object({ content: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, postId: "post_" + Date.now() };
-    }),
+    .input(z.object({ content: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      postId: null as string | null,
+      error: "Facebook sharing is unavailable until a verified provider integration is configured",
+    })),
 
   linkedinShare: protectedProcedure
-    .input(z.object({ content: z.string() }))
-    .mutation(async ({ input }) => {
-      return { success: true, postId: "post_" + Date.now() };
-    }),
+    .input(z.object({ content: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      postId: null as string | null,
+      error: "LinkedIn sharing is unavailable until a verified provider integration is configured",
+    })),
 
   // ===== CRYPTO INTEGRATIONS =====
   coinbaseWebhook: publicProcedure
-    .input(z.object({ event: z.string() }))
-    .mutation(async ({ input }) => {
-      return { processed: true, eventId: input.event };
-    }),
+    .input(z.object({ event: z.string().min(1) }))
+    .mutation(async ({ input }) => ({
+      processed: false,
+      unavailable: true,
+      eventId: input.event,
+      error: "Coinbase webhook processing is unavailable until signature verification and idempotent event storage are configured",
+    })),
 
   chainlinkPriceOracle: publicProcedure
     .input(z.object({ symbol: z.string() }))
