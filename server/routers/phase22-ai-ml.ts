@@ -12,18 +12,12 @@ export const phase22AiMlRouter = router({
       timeframe: z.enum(["1h", "4h", "1d", "1w"]),
       includeConfidence: z.boolean().default(true),
     }))
-    .query(async ({ input }) => {
-      return {
-        token: input.token,
-        timeframe: input.timeframe,
-        prediction: {
-          direction: ["UP", "DOWN", "SIDEWAYS"][Math.floor(Math.random() * 3)],
-          confidence: Math.random() * 100,
-          targetPrice: Math.random() * 10000,
-          reasoning: "Based on technical analysis and ML model",
-        },
-      };
-    }),
+    .query(async ({ input }) => ({
+      token: input.token,
+      timeframe: input.timeframe,
+      unavailable: true,
+      error: "Market prediction is unavailable until a verified data source and validated model are configured",
+    })),
 
   // AI-powered portfolio optimization
   optimizePortfolio: protectedProcedure
@@ -31,32 +25,13 @@ export const phase22AiMlRouter = router({
       riskTolerance: z.enum(["low", "medium", "high"]),
       investmentHorizon: z.enum(["short", "medium", "long"]),
     }))
-    .query(async ({ input, ctx }) => {
-      return {
-        userId: ctx.user.id,
-        optimization: {
-          currentAllocation: {
-            SKY444: 25,
-            DODGE: 25,
-            TRUMP: 20,
-            BTC: 15,
-            USDT: 10,
-            MONERO: 5,
-          },
-          recommendedAllocation: {
-            SKY444: 30,
-            DODGE: 20,
-            TRUMP: 15,
-            BTC: 20,
-            USDT: 10,
-            MONERO: 5,
-          },
-          expectedReturn: "12.5%",
-          riskScore: 45,
-          rebalancingNeeded: true,
-        },
-      };
-    }),
+    .query(async ({ input, ctx }) => ({
+      userId: ctx.user.id,
+      riskTolerance: input.riskTolerance,
+      investmentHorizon: input.investmentHorizon,
+      unavailable: true,
+      error: "Portfolio optimization is unavailable until verified holdings, market data, and a validated model are configured",
+    })),
 
   // Anomaly detection in user behavior
   detectAnomalies: protectedProcedure.query(async ({ ctx }) => {
