@@ -45,7 +45,14 @@ export const tradingRouter = router({
         : content.includes("SELL")
           ? "sell"
           : "hold";
-      const confidence = Math.random() * 0.4 + 0.6; // 0.6-1.0
+      const confidenceMatch = content.match(/confidence\\s*[:=]?\\s*(0(?:\\.\\d+)?|1(?:\\.0)?)/i);
+      if (!confidenceMatch) {
+        throw new Error("Model response did not include a verifiable confidence value");
+      }
+      const confidence = Number(confidenceMatch[1]);
+      if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+        throw new Error("Model confidence value is outside the valid range");
+      }
 
       const db = await getDb();
       if (!db) throw new Error("Database not available");
