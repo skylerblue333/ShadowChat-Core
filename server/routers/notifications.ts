@@ -1,5 +1,8 @@
-import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
+import { router, protectedProcedure } from "../_core/trpc";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { getDb } from "../db";
+import { pushNotificationsAnalytics } from "../../drizzle/schema";
 
 /**
  * NOTIFICATIONS ROUTER — Real-time activity feeds and alerts
@@ -8,74 +11,55 @@ import { z } from "zod";
 export const notificationsRouter = router({
   // ===== GET USER NOTIFICATIONS =====
   getNotifications: protectedProcedure
-    .input(z.object({ limit: z.number().default(20) }))
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(20) }))
     .query(async ({ ctx, input }) => {
-      // Mock notifications - in production, query from database
-      const notifications = [
-        {
-          id: 1,
-          type: "trading_signal",
-          title: "Market Breakout Detected",
-          message: "BTC/USD showing strong uptrend - AI recommends BUY",
-          timestamp: new Date(Date.now() - 2 * 60000),
-          read: false,
-          icon: "📈",
-        },
-        {
-          id: 2,
-          type: "new_follower",
-          title: "New Follower",
-          message: "Alex Rivera started following you (98% compatibility)",
-          timestamp: new Date(Date.now() - 5 * 60000),
-          read: false,
-          icon: "👥",
-        },
-        {
-          id: 3,
-          type: "marketplace",
-          title: "Marketplace Sale",
-          message: "Your AI Trading Bot Pro sold for 2,500 USDT",
-          timestamp: new Date(Date.now() - 15 * 60000),
-          read: false,
-          icon: "💰",
-        },
-        {
-          id: 4,
-          type: "charity",
-          title: "Milestone Reached",
-          message: "Clean Water Initiative reached $50K goal!",
-          timestamp: new Date(Date.now() - 30 * 60000),
-          read: true,
-          icon: "🎯",
-        },
-        {
-          id: 5,
-          type: "governance",
-          title: "Vote Reminder",
-          message: "New proposal: Increase DODGE rewards to 5%",
-          timestamp: new Date(Date.now() - 1 * 3600000),
-          read: true,
-          icon: "🗳️",
-        },
-      ];
+      const database = await getDb();
+      if (!database) throw new Error("Database not available");
+
+      const rows = await database
+        .select()
+        .from(pushNotificationsAnalytics)
+        .where(eq(pushNotificationsAnalytics.userId, ctx.user.id))
+        .orderBy(desc(pushNotificationsAnalytics.createdAt))
+        .limit(input.limit);
+      const allRows = await database
+        .select({ isRead: pushNotificationsAnalytics.isRead })
+        .from(pushNotificationsAnalytics)
+        .where(eq(pushNotificationsAnalytics.userId, ctx.user.id));
 
       return {
         userId: ctx.user.id,
-        notifications: notifications.slice(0, input.limit),
-        unreadCount: notifications.filter(n => !n.read).length,
-        totalCount: notifications.length,
+        notifications: rows.map((notification) => ({
+          id: notification.id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          timestamp: notification.createdAt,
+          read: notification.isRead ?? false,
+          actionUrl: notification.actionUrl,
+        })),
+        unreadCount: allRows.filter((notification) => !notification.isRead).length,
+        totalCount: allRows.length,
       };
     }),
 
   // ===== MARK AS READ =====
   markAsRead: protectedProcedure
-    .input(z.object({ notificationId: z.number() }))
+    .input(z.object({ notificationId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      return {
-        success: true,
-        notificationId: input.notificationId,
-        message: "Notification marked as read",
-      };
+      const database = await getDb();
+      if (!database) throw new Error("Database not available");
+
+      await database
+        .update(pushNotificationsAnalytics)
+        .set({ isRead: true, readAt: new Date() })
+        .where(
+          and(
+            eq(pushNotificationsAnalytics.id, input.notificationId),
+            eq(pushNotificationsAnalytics.userId, ctx.user.id),
+          ),
+        );
+      return { success: true, notificationId: input.notificationId };
     }),
 
   // ===== GET ACTIVITY FEED =====
