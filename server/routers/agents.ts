@@ -414,32 +414,17 @@ export const agentsRouter = router({
       liquidityBudget: z.number(),
     }))
     .mutation(async ({ input }) => {
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are Stounula Economic Engine. Manage mining, trading, and liquidity for coins.`,
-          } as any,
-          {
-            role: "user",
-            content: `Run economic engine with mining $${input.miningBudget}, trading $${input.tradingBudget}, liquidity $${input.liquidityBudget}.`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const economicPlan = typeof contentMsg === "string" ? contentMsg : "Economic plan generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         coins: input.coins,
         miningBudget: input.miningBudget,
         tradingBudget: input.tradingBudget,
         liquidityBudget: input.liquidityBudget,
-        totalBudget: input.miningBudget + input.tradingBudget + input.liquidityBudget,
-        economicPlan: economicPlan,
-        status: "economic_engine_running",
-        timestamp: new Date(),
+        totalBudget: null as number | null,
+        economicPlan: null as string | null,
+        status: "unavailable" as const,
+        error: "The economic engine is unavailable; no mining, trading, liquidity, or budget deployment operation is performed",
       };
     }),
 });
