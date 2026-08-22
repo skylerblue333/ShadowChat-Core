@@ -313,31 +313,16 @@ export const agentsRouter = router({
       const agent = STOUNULA_AGENTS[input.agentType as keyof typeof STOUNULA_AGENTS];
       if (!agent) throw new Error("Invalid agent type");
 
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are ${agent.name} operating as Stounula autonomous trader. Execute trading strategy for coins: ${input.coins.join(", ")}. Budget: $${input.tradingBudget}. Risk: ${input.riskLevel}. Provide buy/sell signals and portfolio allocation.`,
-          } as any,
-          {
-            role: "user",
-            content: `Execute autonomous trading for ${input.coins.length} coins with $${input.tradingBudget} budget at ${input.riskLevel} risk level.`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const tradingPlan = typeof contentMsg === "string" ? contentMsg : "Trading plan generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         agent: agent,
         coins: input.coins,
         budget: input.tradingBudget,
         riskLevel: input.riskLevel,
-        tradingPlan: tradingPlan,
-        status: "trading_active",
-        timestamp: new Date(),
+        tradingPlan: null as string | null,
+        status: "unavailable" as const,
+        error: "Autonomous trading is unavailable; no orders, custody, or market execution are performed without verified trading infrastructure",
       };
     }),
 
