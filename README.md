@@ -46,3 +46,13 @@ The project is organized into a modular structure to ensure clarity and ease of 
 
 ---
 *Powered by SkyCoin4444*
+
+## Verified authentication and messaging workflow
+
+The maintained application uses the configured OAuth provider for account identity and session issuance. The `/signup` route is an OAuth entry point; it does not create local email/password accounts. The callback at `/api/oauth/callback` exchanges the provider code, upserts the user, and issues the server session cookie.
+
+Authenticated direct messaging is exposed through the `messages.send` and `messages.conversation` tRPC procedures. Messages are written to the `directMessages` table, which enforces sender and recipient references to real users, bounded content, conversation indexes, and a distinct-participant constraint. Successful writes publish to the in-process real-time subscriber bus; this is not a distributed WebSocket service and must not be described as multi-instance real-time delivery.
+
+Before using messaging with real data, configure `DATABASE_URL` and apply `drizzle/0010_direct_messages.sql` using the project’s migration process. Configure `VITE_APP_ID`, `VITE_OAUTH_PORTAL_URL`, `OAUTH_SERVER_URL`, and a long random server-side `JWT_SECRET`; never expose `DATABASE_URL` or `JWT_SECRET` to browser code. The checked-in `.env.example` contains placeholders only.
+
+The repository’s CI currently verifies locked installation, TypeScript checking, tests, and production build. A passing CI run does not mean a production database has been provisioned or that OAuth credentials are configured. Deployment, migration application, provider configuration, and external multi-instance transport remain operator-owned prerequisites until independently verified.
