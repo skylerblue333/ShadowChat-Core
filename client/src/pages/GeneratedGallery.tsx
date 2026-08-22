@@ -18,11 +18,15 @@ export default function GeneratedGallery() {
   return (
     <div className="container py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Generated Screen Gallery</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">Generated Screen Gallery</h1>
+          <Badge variant="outline" className="border-amber-500/40 text-amber-300">Experimental inventory</Badge>
+        </div>
         <p className="text-muted-foreground mt-2 max-w-3xl">
-          {generatedRoutes.length} generated screens are wired into the app and reachable below.
-          These are AI-generated draft UIs rendered with sample/stub data (no live backend), kept
-          isolated from the type-checked core app. Click any card to open it live.
+          {generatedRoutes.length} generated screen files are preserved as an inventory and are reachable below.
+          They are draft UI experiments rendered with sample or stub data, have no production-readiness claim,
+          and are isolated from the validated core product. A screen must receive a real contract, tests, and
+          data-source verification before it can be promoted to a canonical product route.
         </p>
         <div className="mt-4 flex items-center gap-3">
           <Badge variant="secondary">{filtered.length} shown</Badge>
