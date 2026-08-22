@@ -2,7 +2,7 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { getDb } from "../db";
 import { tradingBots, botTrades, botPerformance } from "../../drizzle/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 
 export const tradingBotsRouter = router({
   createBot: protectedProcedure
@@ -67,14 +67,34 @@ export const tradingBotsRouter = router({
     }),
 
   getBotPerformance: protectedProcedure
-    .input(z.object({ botId: z.number(), days: z.number().default(7) }))
+    .input(z.object({ botId: z.number().int().positive(), days: z.number().int().min(1).max(365).default(7) }))
     .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const cutoff = new Date(Date.now() - input.days * 24 * 60 * 60 * 1000);
+      const rows = await db
+        .select()
+        .from(botPerformance)
+        .where(
+          and(
+            eq(botPerformance.botId, input.botId),
+            eq(botPerformance.userId, ctx.user.id),
+            gte(botPerformance.date, cutoff),
+          ),
+        );
+      const tradesExecuted = rows.reduce((sum, row) => sum + row.tradesExecuted, 0);
+      const wins = rows.reduce((sum, row) => sum + row.winCount, 0);
+      const losses = rows.reduce((sum, row) => sum + row.lossCount, 0);
       return {
-        totalPnl: 1250.5,
-        winRate: 0.65,
-        tradesExecuted: 42,
-        avgWin: 35.2,
-        avgLoss: -22.1,
+        botId: input.botId,
+        days: input.days,
+        totalPnl: rows.reduce((sum, row) => sum + row.dailyPnl, 0),
+        winRate: wins + losses > 0 ? wins / (wins + losses) : 0,
+        tradesExecuted,
+        avgWin: null,
+        avgLoss: null,
+        dataPoints: rows.length,
       };
     }),
 
