@@ -25,12 +25,25 @@ export const featuresExpansionRouter = router({
   productRecommend: publicProcedure.input(z.object({ userId: z.number() })).query(async ({ input }) => ({ recommendations: [] })),
   cartAdd: protectedProcedure.input(z.object({ productId: z.number() })).mutation(async ({ input }) => ({ success: true })),
   cartRemove: protectedProcedure.input(z.object({ productId: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  cartCheckout: protectedProcedure.input(z.object({ items: z.array(z.number()) })).mutation(async ({ input }) => ({ orderId: 1 })),
+  cartCheckout: protectedProcedure.input(z.object({ items: z.array(z.number().int().positive()).min(1) })).mutation(async () => ({
+    orderId: null as number | null,
+    success: false,
+    unavailable: true,
+    error: "Checkout is unavailable until a real order and payment ledger are configured",
+  })),
   orderTrack: publicProcedure.input(z.object({ orderId: z.number() })).query(async ({ input }) => ({ status: "shipped" })),
   orderCancel: protectedProcedure.input(z.object({ orderId: z.number() })).mutation(async ({ input }) => ({ success: true })),
   orderReturn: protectedProcedure.input(z.object({ orderId: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  paymentProcess: protectedProcedure.input(z.object({ amount: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  paymentRefund: protectedProcedure.input(z.object({ transactionId: z.number() })).mutation(async ({ input }) => ({ success: true })),
+  paymentProcess: protectedProcedure.input(z.object({ amount: z.number().positive() })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Payment processing is unavailable until a verified payment provider and ledger are configured",
+  })),
+  paymentRefund: protectedProcedure.input(z.object({ transactionId: z.number().int().positive() })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Payment refunds are unavailable until a verified payment provider and ledger are configured",
+  })),
   invoiceGenerate: protectedProcedure.input(z.object({ orderId: z.number() })).query(async ({ input }) => ({ invoiceUrl: "invoice_" + input.orderId })),
   shippingCalculate: publicProcedure.input(z.object({ zipcode: z.string() })).query(async ({ input }) => ({ cost: 9.99 })),
 
@@ -90,7 +103,11 @@ export const featuresExpansionRouter = router({
   noteEdit: protectedProcedure.input(z.object({ noteId: z.number(), content: z.string() })).mutation(async ({ input }) => ({ success: true })),
 
   // ===== CRYPTO & BLOCKCHAIN (100+ features) =====
-  walletConnect: protectedProcedure.input(z.object({ address: z.string() })).mutation(async ({ input }) => ({ success: true })),
+  walletConnect: protectedProcedure.input(z.object({ address: z.string().min(1) })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Wallet connection is unavailable until a verified wallet integration is configured",
+  })),
   walletBalance: publicProcedure.input(z.object({ address: z.string() })).query(async ({ input }) => ({ balance: 0 })),
   transactionSend: protectedProcedure.input(z.object({ to: z.string().min(1), amount: z.number().positive() })).mutation(async ({ input }) => ({
     txHash: null as string | null,
@@ -101,12 +118,37 @@ export const featuresExpansionRouter = router({
     error: "Blockchain transaction submission is unavailable until a verified signer and network integration are configured",
   })),
   transactionHistory: publicProcedure.input(z.object({ address: z.string() })).query(async ({ input }) => ({ transactions: [] })),
-  nftMint: protectedProcedure.input(z.object({ name: z.string() })).mutation(async ({ input }) => ({ nftId: 1 })),
-  nftTransfer: protectedProcedure.input(z.object({ nftId: z.number(), to: z.string() })).mutation(async ({ input }) => ({ success: true })),
-  stakingDeposit: protectedProcedure.input(z.object({ amount: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  stakingWithdraw: protectedProcedure.input(z.object({ amount: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  swapTokens: protectedProcedure.input(z.object({ from: z.string(), to: z.string(), amount: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  liquidityAdd: protectedProcedure.input(z.object({ token1: z.string(), token2: z.string() })).mutation(async ({ input }) => ({ success: true })),
+  nftMint: protectedProcedure.input(z.object({ name: z.string().min(1) })).mutation(async () => ({
+    nftId: null as number | null,
+    success: false,
+    unavailable: true,
+    error: "NFT minting is unavailable until a verified chain signer and metadata store are configured",
+  })),
+  nftTransfer: protectedProcedure.input(z.object({ nftId: z.number().int().positive(), to: z.string().min(1) })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "NFT transfer is unavailable until a verified chain signer and ownership store are configured",
+  })),
+  stakingDeposit: protectedProcedure.input(z.object({ amount: z.number().positive() })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Staking deposits are unavailable until a verified chain integration and ledger are configured",
+  })),
+  stakingWithdraw: protectedProcedure.input(z.object({ amount: z.number().positive() })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Staking withdrawals are unavailable until a verified chain integration and ledger are configured",
+  })),
+  swapTokens: protectedProcedure.input(z.object({ from: z.string().min(1), to: z.string().min(1), amount: z.number().positive() })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Token swaps are unavailable until a verified quote, signer, and settlement path are configured",
+  })),
+  liquidityAdd: protectedProcedure.input(z.object({ token1: z.string().min(1), token2: z.string().min(1) })).mutation(async () => ({
+    success: false,
+    unavailable: true,
+    error: "Liquidity operations are unavailable until a verified pool integration and settlement ledger are configured",
+  })),
 
   // ===== STREAMING & MEDIA (100+ features) =====
   videoUpload: protectedProcedure.input(z.object({ title: z.string() })).mutation(async ({ input }) => ({ videoId: 1 })),
