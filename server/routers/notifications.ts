@@ -108,46 +108,14 @@ export const notificationsRouter = router({
 
   // ===== GET TRADING ALERTS =====
   getTradingAlerts: protectedProcedure
-    .input(z.object({ symbol: z.string().optional() }))
-    .query(async ({ ctx, input }) => {
-      const alerts = [
-        {
-          id: 1,
-          symbol: "BTC/USD",
-          signal: "BUY",
-          confidence: 0.92,
-          price: 67400,
-          target: 70000,
-          stopLoss: 65000,
-          timestamp: new Date(Date.now() - 2 * 60000),
-        },
-        {
-          id: 2,
-          symbol: "ETH/USD",
-          signal: "HOLD",
-          confidence: 0.78,
-          price: 3520,
-          timestamp: new Date(Date.now() - 10 * 60000),
-        },
-        {
-          id: 3,
-          symbol: "DODGE/USD",
-          signal: "BUY",
-          confidence: 0.85,
-          price: 0.42,
-          target: 0.50,
-          timestamp: new Date(Date.now() - 20 * 60000),
-        },
-      ];
-
-      return {
-        userId: ctx.user.id,
-        alerts: input.symbol
-          ? alerts.filter(a => a.symbol === input.symbol)
-          : alerts,
-        totalAlerts: alerts.length,
-      };
-    }),
+    .input(z.object({ symbol: z.string().trim().min(1).max(32).optional() }))
+    .query(async ({ ctx }) => ({
+      userId: ctx.user.id,
+      alerts: [],
+      totalAlerts: 0,
+      unavailable: true,
+      reason: "No verified market-data provider is configured",
+    })),
 
   // ===== GET MARKETPLACE ALERTS =====
   getMarketplaceAlerts: protectedProcedure.query(async ({ ctx }) => {
