@@ -108,18 +108,13 @@ export const escrowRouter = router({
 
       const amount = priceMap[input.currency];
 
-      await db.insert(escrowTransactions).values([
-        {
-          buyerId: ctx.user!.id,
-          sellerId: listing.sellerId,
-          listingId: input.listingId,
-          amount,
-          currency: input.currency,
-          status: "pending",
-        },
-      ]);
-
-      return { success: true, amount };
+      return {
+        success: false,
+        unavailable: true,
+        amount,
+        currency: input.currency,
+        error: "Escrow initiation is unavailable until verified payment/deposit handling and a settlement ledger are configured",
+      };
     }),
 
   // Buyer confirms receipt
