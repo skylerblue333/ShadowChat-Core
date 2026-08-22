@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
 import { directMessages, users } from "../../drizzle/schema";
 import { createMessageInput } from "../messaging-contract";
@@ -76,9 +76,15 @@ export const messagesRouter = router({
         .select()
         .from(directMessages)
         .where(
-          and(
-            eq(directMessages.senderId, ctx.user.id),
-            eq(directMessages.recipientId, input.participantId),
+          or(
+            and(
+              eq(directMessages.senderId, ctx.user.id),
+              eq(directMessages.recipientId, input.participantId),
+            ),
+            and(
+              eq(directMessages.senderId, input.participantId),
+              eq(directMessages.recipientId, ctx.user.id),
+            ),
           ),
         )
         .orderBy(directMessages.createdAt, directMessages.id)
