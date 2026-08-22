@@ -38,6 +38,7 @@ import { seedRouter } from "./routers/seed";
 
 import { freeTierRouter } from "./routers/free-tier";
 import { notificationsRouter } from "./routers/notifications";
+import { messagesRouter } from "./routers/messages";
 import { codeQualityRouter } from "./routers/code-quality";
 import { advancedSearchRouter } from "./routers/advanced-search";
 import { cryptoRouter } from "./routers/crypto";
@@ -107,6 +108,7 @@ export const appRouter = router({
   uploads: uploadsRouter,
   freetier: freeTierRouter,
   notifications: notificationsRouter,
+  messages: messagesRouter,
   codeQuality: codeQualityRouter,
   search: advancedSearchRouter,
   crypto: cryptoRouter,
