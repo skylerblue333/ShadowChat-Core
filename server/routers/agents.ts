@@ -333,29 +333,13 @@ export const agentsRouter = router({
       targetMarketCap: z.number(),
     }))
     .mutation(async ({ input }) => {
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are Stounula Economic Optimizer. Analyze coins and provide optimization strategy to reach target market cap. Coins: ${input.coins.join(", ")}. Target: $${input.targetMarketCap}. Provide: 1) Volume strategy 2) Holder incentives 3) Use cases 4) Marketing 5) Partnerships`,
-          } as any,
-          {
-            role: "user",
-            content: `Optimize economy for ${input.coins.join(", ")} to reach $${input.targetMarketCap} market cap.`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const optimization = typeof contentMsg === "string" ? contentMsg : "Optimization plan generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         coins: input.coins,
         targetMarketCap: input.targetMarketCap,
-        optimizationPlan: optimization,
-        system: "Stounula",
-        timestamp: new Date(),
+        optimizationPlan: null as string | null,
+        error: "Economic optimization is unavailable; no market-cap, volume, or holder-incentive operation is performed",
       };
     }),
 
@@ -367,30 +351,15 @@ export const agentsRouter = router({
       strategy: z.enum(["market_making", "yield_farming", "arbitrage"]),
     }))
     .mutation(async ({ input }) => {
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are Stounula Liquidity Manager. Manage liquidity for ${input.coin} using ${input.strategy} strategy with $${input.liquidityAmount}. Provide: 1) Pool allocation 2) Expected APY 3) Risk factors 4) Rebalancing schedule`,
-          } as any,
-          {
-            role: "user",
-            content: `Manage $${input.liquidityAmount} liquidity for ${input.coin} using ${input.strategy}.`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const liquidityPlan = typeof contentMsg === "string" ? contentMsg : "Liquidity plan generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         coin: input.coin,
         liquidityAmount: input.liquidityAmount,
         strategy: input.strategy,
-        liquidityPlan: liquidityPlan,
-        status: "liquidity_active",
-        timestamp: new Date(),
+        liquidityPlan: null as string | null,
+        status: "unavailable" as const,
+        error: "Liquidity management is unavailable; no pool, yield, arbitrage, or market-making operation is performed",
       };
     }),
 
@@ -402,30 +371,15 @@ export const agentsRouter = router({
       poolStrategy: z.enum(["solo", "pool", "hybrid"]),
     }))
     .mutation(async ({ input }) => {
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are Stounula Mining Manager. Manage mining for ${input.coin} with ${input.hashpower} hashpower using ${input.poolStrategy} strategy.`,
-          } as any,
-          {
-            role: "user",
-            content: `Start mining ${input.coin} with ${input.hashpower} hashpower.`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const miningPlan = typeof contentMsg === "string" ? contentMsg : "Mining plan generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         coin: input.coin,
         hashpower: input.hashpower,
         poolStrategy: input.poolStrategy,
-        miningPlan: miningPlan,
-        status: "mining_active",
-        timestamp: new Date(),
+        miningPlan: null as string | null,
+        status: "unavailable" as const,
+        error: "Mining is unavailable until verified mining infrastructure and reward accounting are configured",
       };
     }),
 
@@ -438,31 +392,16 @@ export const agentsRouter = router({
       riskPerTrade: z.number(),
     }))
     .mutation(async ({ input }) => {
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are Stounula Trading Bot. Execute ${input.botStrategy} trading on pairs with $${input.capital} capital.`,
-          } as any,
-          {
-            role: "user",
-            content: `Run ${input.botStrategy} trading bot with ${input.riskPerTrade}% risk per trade.`,
-          } as any,
-        ],
-      });
-
-      const contentMsg = response.choices[0]?.message.content;
-      const botPlan = typeof contentMsg === "string" ? contentMsg : "Trading bot plan generated";
-
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         tradingPairs: input.tradingPairs,
         capital: input.capital,
         botStrategy: input.botStrategy,
         riskPerTrade: input.riskPerTrade,
-        botPlan: botPlan,
-        status: "trading_active",
-        timestamp: new Date(),
+        botPlan: null as string | null,
+        status: "unavailable" as const,
+        error: "Trading bot execution is unavailable; no orders or capital deployment are performed without verified trading infrastructure",
       };
     }),
 
