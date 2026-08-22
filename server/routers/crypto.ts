@@ -34,16 +34,27 @@ export const cryptoRouter = router({
   }),
 
   initializeWallet: protectedProcedure
-    .input(z.object({ token: TokenEnum, initialBalance: z.number().default(0) }))
+    .input(z.object({ token: TokenEnum, initialBalance: z.number().nonnegative().default(0) }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) return { success: false };
 
       try {
+        if (input.initialBalance !== 0) {
+          return { success: false, error: "Initial balances must come from a verified deposit" };
+        }
+
+        const existing = await db
+          .select({ id: cryptoWallets.id })
+          .from(cryptoWallets)
+          .where(and(eq(cryptoWallets.userId, ctx.user.id), eq(cryptoWallets.token, input.token)))
+          .limit(1);
+        if (existing[0]) return { success: false, error: "Wallet already initialized" };
+
         await db.insert(cryptoWallets).values({
           userId: ctx.user.id,
           token: input.token,
-          balance: input.initialBalance,
+          balance: 0,
         });
         return { success: true };
       } catch {
