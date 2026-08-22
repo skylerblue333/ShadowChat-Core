@@ -30,15 +30,14 @@ export const walletEnhancedRouter = router({
       const db = await getDb();
       if (!db) return { success: false, error: "DB unavailable" };
       try {
-        // Store wallet connection
         return {
-          success: true,
+          success: false,
+          unavailable: true,
           address: input.walletAddress,
           provider: input.provider,
           chainId: input.chainId,
           network: Object.values(SUPPORTED_NETWORKS).find(n => n.chainId === input.chainId)?.name || "Unknown",
-          message: `${input.provider} wallet connected successfully`,
-          timestamp: new Date().toISOString(),
+          error: "Wallet connection is unavailable until signature verification and wallet persistence are configured",
         };
       } catch (error) {
         return { success: false, error: "Failed to connect wallet" };
@@ -65,7 +64,7 @@ export const walletEnhancedRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       const db = await getDb();
-      if (!db) return { balance: 0, token: input.token, chainId: input.chainId };
+      if (!db) return { balance: null as number | null, token: input.token, chainId: input.chainId, unavailable: true, error: "Wallet balance is unavailable because the database is not configured" };
       try {
         const wallet = await db
           .select()
@@ -73,14 +72,16 @@ export const walletEnhancedRouter = router({
           .where(and(eq(cryptoWallets.userId, ctx.user.id)))
           .limit(1);
         return {
-          balance: wallet[0]?.balance || 0,
+          balance: wallet[0]?.balance ?? null,
           token: input.token,
           chainId: input.chainId,
           walletAddress: input.walletAddress,
           network: Object.values(SUPPORTED_NETWORKS).find(n => n.chainId === input.chainId)?.name,
+          unavailable: wallet.length === 0,
+          error: wallet.length === 0 ? "No persisted wallet balance is available" : undefined,
         };
       } catch {
-        return { balance: 0, token: input.token, chainId: input.chainId };
+        return { balance: null as number | null, token: input.token, chainId: input.chainId, unavailable: true, error: "Wallet balance lookup failed" };
       }
     }),
 
