@@ -95,114 +95,24 @@ export const cryptoRouter = router({
 
   // ============ STAKING ============
   startStaking: protectedProcedure
-    .input(z.object({ token: TokenEnum, amount: z.number().min(1), lockPeriodDays: z.number().min(1).max(365) }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) return { success: false };
-
-      try {
-        const wallet = await db
-          .select()
-          .from(cryptoWallets)
-          .where(and(eq(cryptoWallets.userId, ctx.user.id), eq(cryptoWallets.token, input.token)))
-          .limit(1);
-
-        if (!wallet[0] || wallet[0].balance < input.amount) {
-          return { success: false, error: "Insufficient balance" };
-        }
-
-        // Calculate APY based on lock period (longer lock = higher APY)
-        const apy = 5 + (input.lockPeriodDays / 365) * 15; // 5-20% APY
-
-        const unlocksAt = new Date();
-        unlocksAt.setDate(unlocksAt.getDate() + input.lockPeriodDays);
-
-        const result = await db.insert(stakingPositions).values({
-          userId: ctx.user.id,
-          token: input.token,
-          amount: input.amount,
-          apy,
-          lockPeriodDays: input.lockPeriodDays,
-          unlocksAt,
-        });
-
-        // Deduct from balance, add to staked
-        await db
-          .update(cryptoWallets)
-          .set({
-            balance: wallet[0].balance - input.amount,
-            stakedBalance: wallet[0].stakedBalance + input.amount,
-          })
-          .where(eq(cryptoWallets.id, wallet[0].id));
-
-        return { success: true, positionId: (result as any).insertId || 0, apy };
-      } catch (error) {
-        return { success: false, error: String(error) };
-      }
-    }),
+    .input(z.object({ token: TokenEnum, amount: z.number().positive(), lockPeriodDays: z.number().int().min(1).max(365) }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      positionId: null as number | null,
+      apy: null as number | null,
+      error: "Staking is unavailable until a verified protocol APY, atomic ledger transaction, and settlement integration are configured",
+    })),
 
   unstake: protectedProcedure
-    .input(z.object({ positionId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) return { success: false };
-
-      try {
-        const position = await db
-          .select()
-          .from(stakingPositions)
-          .where(and(eq(stakingPositions.id, input.positionId), eq(stakingPositions.userId, ctx.user.id)))
-          .limit(1);
-
-        if (!position[0]) return { success: false, error: "Position not found" };
-
-        const pos = position[0];
-        if (new Date() < pos.unlocksAt) {
-          return { success: false, error: "Staking period not complete" };
-        }
-
-        // Calculate rewards
-        const daysPassed = Math.floor((Date.now() - pos.startedAt.getTime()) / (1000 * 60 * 60 * 24));
-        const rewards = (pos.amount * pos.apy * daysPassed) / (365 * 100);
-
-        // Update position
-        await db
-          .update(stakingPositions)
-          .set({ status: "unstaked", rewardsClaimed: rewards })
-          .where(eq(stakingPositions.id, input.positionId));
-
-        // Return funds + rewards to wallet
-        const wallet = await db
-          .select()
-          .from(cryptoWallets)
-          .where(and(eq(cryptoWallets.userId, ctx.user.id), eq(cryptoWallets.token, pos.token)))
-          .limit(1);
-
-        if (wallet[0]) {
-          await db
-            .update(cryptoWallets)
-            .set({
-              balance: wallet[0].balance + pos.amount + rewards,
-              stakedBalance: wallet[0].stakedBalance - pos.amount,
-            })
-            .where(eq(cryptoWallets.id, wallet[0].id));
-        }
-
-        // Record transaction
-        await db.insert(cryptoTransactions).values({
-          userId: ctx.user.id,
-          token: pos.token,
-          type: "staking_reward",
-          amount: rewards,
-          relatedId: input.positionId,
-          description: `Staking reward: ${rewards} ${pos.token}`,
-        });
-
-        return { success: true, rewards, totalReturned: pos.amount + rewards };
-      } catch (error) {
-        return { success: false, error: String(error) };
-      }
-    }),
+    .input(z.object({ positionId: z.number().int().positive() }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      rewards: null as number | null,
+      totalReturned: null as number | null,
+      error: "Unstaking is unavailable until a verified protocol settlement and atomic ledger transaction are configured",
+    })),
 
   getStakingPositions: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
