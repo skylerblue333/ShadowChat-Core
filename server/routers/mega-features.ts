@@ -1,4 +1,5 @@
-import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
+import type { AnyProcedure } from "@trpc/server";
+import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 
 /**
@@ -7,7 +8,7 @@ import { z } from "zod";
  */
 
 const createProcedures = () => {
-  const procedures: Record<string, any> = {};
+  const procedures: Record<string, AnyProcedure> = {};
   
   // Generate 1000+ procedures programmatically
   const categories = [
@@ -42,8 +43,13 @@ const createProcedures = () => {
       for (const entity of entities.slice(0, 5)) {
         const procedureName = `${category}_${action}_${entity}`;
         procedures[procedureName] = protectedProcedure
-          .input(z.object({ id: z.number().optional(), data: z.any().optional() }))
-          .query(async ({ input }) => ({ success: true, result: {} }));
+          .input(z.object({ id: z.number().optional(), data: z.unknown().optional() }))
+          .query(async ({ input }) => ({
+            procedure: procedureName,
+            id: input.id ?? null,
+            unavailable: true,
+            error: "This compatibility endpoint is unavailable until a verified implementation is registered",
+          }));
         count++;
         if (count >= 1000) break;
       }
