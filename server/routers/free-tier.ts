@@ -38,63 +38,25 @@ export const freeTierRouter = router({
   }),
 
   // ===== UNLOCK ALL FEATURES =====
-  unlockAllFeatures: protectedProcedure.mutation(async ({ ctx }) => {
-    return {
-      success: true,
-      userId: ctx.user.id,
-      status: "all_features_unlocked",
-      message: "All premium features are now available to you",
-      features: [
-        "HopeAI Code Generation",
-        "Sky School Learning Paths",
-        "Arcade Gaming",
-        "Governance Voting",
-        "Charity Campaigns",
-        "Marketplace Trading",
-        "Analytics Dashboard",
-        "Day Trade Room",
-        "Escrow Shop",
-        "Video Streaming",
-        "Social Media",
-        "AI Agents",
-        "Voice Commands (444+)",
-        "Advanced Search",
-        "Real-time Notifications",
-        "AI Code Quality Scoring",
-        "Grey Area Tools",
-      ],
-    };
-  }),
+  unlockAllFeatures: protectedProcedure.mutation(async ({ ctx }) => ({
+    success: false,
+    unavailable: true,
+    userId: ctx.user.id,
+    status: "unavailable" as const,
+    features: [],
+    error: "Feature entitlements are unavailable until real entitlement policy and billing data are configured",
+  })),
 
   // ===== CHECK FEATURE ACCESS =====
   checkFeatureAccess: protectedProcedure
     .input(z.object({ feature: z.string() }))
     .query(async ({ input, ctx }) => {
-      const featureMap: Record<string, boolean> = {
-        hopeai: true,
-        school: true,
-        arcade: true,
-        governance: true,
-        charity: true,
-        marketplace: true,
-        analytics: true,
-        trading: true,
-        escrow: true,
-        video: true,
-        social: true,
-        agents: true,
-        voice: true,
-        search: true,
-        notifications: true,
-        codegeneration: true,
-        greyarea: true,
-      };
-
       return {
         feature: input.feature,
-        hasAccess: featureMap[input.feature.toLowerCase()] ?? true,
-        tier: "premium_free",
-        message: "Feature access granted",
+        hasAccess: false,
+        tier: "unavailable" as const,
+        unavailable: true,
+        message: "Feature access cannot be determined until a real entitlement policy is configured",
       };
     }),
 
@@ -211,14 +173,13 @@ export const freeTierRouter = router({
     };
   }),
 
-  // ===== UPGRADE TO PREMIUM (Already Premium) =====
-  upgradeToPremium: protectedProcedure.mutation(async ({ ctx }) => {
-    return {
-      success: true,
-      message: "You already have premium access - Free Will Model",
-      tier: "premium_free",
-      features: "all_unlocked",
-      cost: "$0",
-    };
-  }),
+  // ===== UPGRADE TO PREMIUM =====
+  upgradeToPremium: protectedProcedure.mutation(async ({ ctx }) => ({
+    success: false,
+    unavailable: true,
+    tier: null as string | null,
+    features: [],
+    cost: null as string | null,
+    error: "Premium upgrades are unavailable until real plan, billing, and entitlement services are configured",
+  })),
 });
