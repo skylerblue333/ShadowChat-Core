@@ -211,20 +211,11 @@ export const advancedSearchRouter = router({
   /**
    * Trending searches across all modules
    */
-  trendingSearches: publicProcedure.query(async () => {
-    return {
-      trending: [
-        { term: "AI Code Generation", count: 1250, category: "marketplace" },
-        { term: "Python Courses", count: 890, category: "school" },
-        { term: "Governance Voting", count: 756, category: "governance" },
-        { term: "Charity Campaigns", count: 634, category: "charity" },
-        { term: "Gaming Leaderboards", count: 512, category: "arcade" },
-        { term: "Live Streams", count: 445, category: "video" },
-        { term: "Community Posts", count: 389, category: "social" },
-        { term: "Trading Signals", count: 321, category: "marketplace" },
-      ],
-    };
-  }),
+  trendingSearches: publicProcedure.query(async () => ({
+    trending: [],
+    unavailable: true,
+    error: "Trending searches are unavailable until measured search-event analytics are configured",
+  })),
 
   /**
    * Search suggestions based on partial query
