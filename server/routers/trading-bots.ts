@@ -2,7 +2,7 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { getDb } from "../db";
 import { tradingBots, botTrades, botPerformance } from "../../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export const tradingBotsRouter = router({
   createBot: protectedProcedure
@@ -41,15 +41,29 @@ export const tradingBotsRouter = router({
   }),
 
   startBot: protectedProcedure
-    .input(z.object({ botId: z.number() }))
+    .input(z.object({ botId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      return { success: true, message: "Bot started" };
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db
+        .update(tradingBots)
+        .set({ status: "active" })
+        .where(and(eq(tradingBots.id, input.botId), eq(tradingBots.userId, ctx.user.id)));
+      return { success: true, botId: input.botId, status: "active" as const };
     }),
 
   stopBot: protectedProcedure
-    .input(z.object({ botId: z.number() }))
+    .input(z.object({ botId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      return { success: true, message: "Bot stopped" };
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      await db
+        .update(tradingBots)
+        .set({ status: "stopped" })
+        .where(and(eq(tradingBots.id, input.botId), eq(tradingBots.userId, ctx.user.id)));
+      return { success: true, botId: input.botId, status: "stopped" as const };
     }),
 
   getBotPerformance: protectedProcedure
