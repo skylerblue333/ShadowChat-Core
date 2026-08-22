@@ -221,44 +221,20 @@ export const phase21RealtimeRouter = router({
       limit: z.number().default(50),
       filter: z.enum(["all", "buy", "sell", "stake", "unstake", "burn"]).optional(),
     }))
-    .query(async ({ input, ctx }) => {
-      return {
-        transactions: Array.from({ length: input.limit }, (_, i) => ({
-          id: `tx_${i}`,
-          type: input.filter || "all",
-          amount: Math.random() * 10000,
-          token: ["SKY444", "DODGE", "TRUMP"][Math.floor(Math.random() * 3)],
-          status: "completed",
-          timestamp: new Date(Date.now() - i * 3600000),
-          hash: `0x${Math.random().toString(16).slice(2)}`,
-        })),
-        streamActive: true,
-        nextUpdate: new Date(Date.now() + 1000),
-      };
-    }),
+    .query(async ({ input }) => ({
+      transactions: [],
+      total: 0,
+      limit: input.limit,
+      filter: input.filter ?? "all",
+      streamActive: false,
+      unavailable: true,
+      reason: "Transaction history requires a verified chain data provider",
+    })),
 
   // Advanced portfolio analytics
-  getPortfolioAnalytics: protectedProcedure.query(async ({ ctx }) => {
-    return {
-      userId: ctx.user.id,
-      totalValue: Math.random() * 100000,
-      dayChange: (Math.random() - 0.5) * 5000,
-      dayChangePercent: (Math.random() - 0.5) * 10,
-      allocation: {
-        SKY444: Math.random() * 100,
-        DODGE: Math.random() * 100,
-        TRUMP: Math.random() * 100,
-        BTC: Math.random() * 100,
-        USDT: Math.random() * 100,
-        MONERO: Math.random() * 100,
-      },
-      performance: {
-        week: (Math.random() - 0.5) * 20,
-        month: (Math.random() - 0.5) * 30,
-        year: (Math.random() - 0.5) * 50,
-      },
-      riskScore: Math.floor(Math.random() * 100),
-      recommendation: "Rebalance portfolio towards stable coins",
-    };
-  }),
+  getPortfolioAnalytics: protectedProcedure.query(async ({ ctx }) => ({
+    userId: ctx.user.id,
+    unavailable: true,
+    reason: "Portfolio analytics require verified balances and market prices",
+  })),
 });
