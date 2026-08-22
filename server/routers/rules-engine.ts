@@ -10,18 +10,13 @@ import { getDb } from "../db";
 export const rulesEngineRouter = router({
   // ===== USER RULES =====
   validateUser: publicProcedure
-    .input(z.object({ userId: z.number() }))
-    .query(async ({ input }) => {
-      return {
-        isValid: true,
-        isActive: true,
-        isPremium: true, // Free will - all premium
-        canPost: true,
-        canTrade: true,
-        canStream: true,
-        canGame: true,
-      };
-    }),
+    .input(z.object({ userId: z.number().int().positive() }))
+    .query(async ({ input }) => ({
+      userId: input.userId,
+      isValid: false,
+      unavailable: true,
+      error: "User authorization is unavailable until this check is backed by the users table and policy evaluation",
+    })),
 
   // ===== CONTENT RULES =====
   validateContent: publicProcedure
@@ -53,8 +48,10 @@ export const rulesEngineRouter = router({
         isValid,
         isFraudulent,
         requiresApproval,
-        fee: input.amount * 0.001,
-        estimatedTime: "5-30 minutes",
+        fee: null as number | null,
+        estimatedTime: null as string | null,
+        unavailable: true,
+        error: "Transaction fee and settlement estimates are unavailable until a verified network and pricing policy are configured",
       };
     }),
 
