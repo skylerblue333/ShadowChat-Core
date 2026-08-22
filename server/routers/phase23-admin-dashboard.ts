@@ -8,19 +8,8 @@ export const phase23AdminDashboardRouter = router({
   getSystemOverview: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin") throw new Error("Admin only");
     return {
-      overview: {
-        totalUsers: 125000,
-        activeUsers24h: 45000,
-        totalTransactions: 2500000,
-        totalVolume: "$125M",
-        systemHealth: 99.9,
-        uptime: "99.99%",
-      },
-      recentMetrics: {
-        newUsersToday: 1250,
-        transactionsToday: 50000,
-        volumeToday: "$2.5M",
-      },
+      unavailable: true,
+      error: "System overview is unavailable until real user, transaction, and observability aggregates are configured",
     };
   }),
 
@@ -44,18 +33,13 @@ export const phase23AdminDashboardRouter = router({
 
   // Transaction monitoring
   monitorTransactions: protectedProcedure
-    .input(z.object({ limit: z.number().default(50) }))
-    .query(async ({ input, ctx }) => {
+    .input(z.object({ limit: z.number().int().positive().max(100).default(50) }))
+    .query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Admin only");
       return {
-        transactions: Array.from({ length: input.limit }, (_, i) => ({
-          id: `tx_${i}`,
-          user: `user_${i}`,
-          amount: Math.random() * 10000,
-          token: ["SKY444", "DODGE", "TRUMP"][Math.floor(Math.random() * 3)],
-          status: "completed",
-          timestamp: new Date(),
-        })),
+        transactions: [],
+        unavailable: true,
+        error: "Transaction monitoring is unavailable until real transaction records and verified chain data are configured",
       };
     }),
 
