@@ -2,7 +2,7 @@ import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { getDb } from "../db";
 import { socialPosts, socialComments, userFollows, postLikes, users } from "../../drizzle/schema";
-import { eq, desc, count, and } from "drizzle-orm";
+import { eq, desc, count, and, like, or } from "drizzle-orm";
 
 export const socialRouter = router({
   // Create post
@@ -320,22 +320,28 @@ export const socialRouter = router({
 
   // EXPLORE SECTION - Real DB queries
   searchUsers: publicProcedure
-    .input(z.object({ query: z.string(), limit: z.number().default(10) }))
+    .input(z.object({ query: z.string().trim().min(1).max(100), limit: z.number().int().min(1).max(50).default(10) }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) return [];
-      
-      // Search users by name (in production, would use full-text search)
+
       const results = await db
         .select()
         .from(users)
+        .where(or(like(users.name, `%${input.query}%`), like(users.openId, `%${input.query}%`)))
         .limit(input.limit);
 
-      return results.map((u) => ({
-        id: u.id,
-        name: u.name || "User",
-        handle: u.openId.substring(0, 20),
-        followers: 0, // Would query from userFollows
+      return Promise.all(results.map(async (u) => {
+        const followerRows = await db
+          .select({ count: count() })
+          .from(userFollows)
+          .where(eq(userFollows.followingId, u.id));
+        return {
+          id: u.id,
+          name: u.name || "User",
+          handle: u.openId.substring(0, 20),
+          followers: Number(followerRows[0]?.count ?? 0),
+        };
       }));
     }),
 
