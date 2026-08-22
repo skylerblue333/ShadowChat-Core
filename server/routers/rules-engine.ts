@@ -75,12 +75,14 @@ export const rulesEngineRouter = router({
     .input(z.object({ symbol: z.string(), amount: z.number(), type: z.string() }))
     .query(async ({ input }) => {
       return {
-        isValid: true,
+        isValid: input.amount > 0,
         minAmount: 0.001,
         maxAmount: 1000000,
-        currentPrice: Math.random() * 100,
-        estimatedFee: input.amount * 0.002,
-        riskLevel: "medium",
+        currentPrice: null as number | null,
+        estimatedFee: null as number | null,
+        riskLevel: null as string | null,
+        unavailable: true,
+        error: "Trade pricing and fee estimates are unavailable until a verified market data source is configured",
       };
     }),
 
@@ -185,35 +187,27 @@ export const rulesEngineRouter = router({
   // ===== REPUTATION RULES =====
   calculateReputation: publicProcedure
     .input(z.object({ userId: z.number() }))
-    .query(async ({ input }) => {
-      return {
-        score: Math.random() * 100,
-        level: "trusted",
-        badges: ["verified", "active", "helpful"],
-        trustScore: 0.85,
-      };
-    }),
+    .query(async () => ({
+      score: null as number | null,
+      level: null as string | null,
+      badges: [],
+      trustScore: null as number | null,
+      unavailable: true,
+      error: "Reputation is unavailable until verified user activity and moderation data are configured",
+    })),
 
   // ===== REWARD RULES =====
   calculateRewards: publicProcedure
-    .input(z.object({ action: z.string(), value: z.number() }))
-    .query(async ({ input }) => {
-      const rewardMultipliers: Record<string, number> = {
-        post: 1,
-        trade: 2,
-        game: 1.5,
-        charity: 3,
-        learning: 1.2,
-      };
-
-      const multiplier = rewardMultipliers[input.action] || 1;
-      return {
-        baseReward: input.value,
-        multiplier,
-        totalReward: input.value * multiplier,
-        bonusTokens: Math.floor(input.value * multiplier * 0.1),
-      };
-    }),
+    .input(z.object({ action: z.string(), value: z.number().nonnegative() }))
+    .query(async ({ input }) => ({
+      action: input.action,
+      baseReward: input.value,
+      multiplier: null as number | null,
+      totalReward: null as number | null,
+      bonusTokens: null as number | null,
+      unavailable: true,
+      error: "Rewards are unavailable until verified event attribution and persistent reward accounting are configured",
+    })),
 
   // ===== COMPLIANCE RULES =====
   checkCompliance: publicProcedure
