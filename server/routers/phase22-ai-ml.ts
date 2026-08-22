@@ -34,27 +34,14 @@ export const phase22AiMlRouter = router({
     })),
 
   // Anomaly detection in user behavior
-  detectAnomalies: protectedProcedure.query(async ({ ctx }) => {
-    return {
-      userId: ctx.user.id,
-      anomalies: [
-        {
-          type: "unusual_trading_volume",
-          severity: "medium",
-          description: "Trading volume 3x higher than average",
-          timestamp: new Date(),
-        },
-        {
-          type: "new_wallet_connection",
-          severity: "low",
-          description: "New wallet connected from different IP",
-          timestamp: new Date(),
-        },
-      ],
-      riskLevel: "low",
-      recommendations: ["Verify recent wallet connection", "Review trading activity"],
-    };
-  }),
+  detectAnomalies: protectedProcedure.query(async ({ ctx }) => ({
+    userId: ctx.user.id,
+    anomalies: [],
+    riskLevel: null,
+    recommendations: [],
+    unavailable: true,
+    error: "Anomaly detection is unavailable until privacy-reviewed behavioral telemetry and a validated detection model are configured",
+  })),
 
   // Natural language processing for sentiment analysis
   analyzeSentiment: publicProcedure
