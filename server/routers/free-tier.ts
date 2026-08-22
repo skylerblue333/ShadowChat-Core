@@ -33,7 +33,7 @@ export const freeTierRouter = router({
       },
       storageQuota: null as string | null,
       apiCallsPerDay: null as string | null,
-      message: "All features unlocked - Free Will Model Active",
+      message: "Feature availability is unavailable until entitlement policy is configured",
     };
   }),
 
@@ -75,7 +75,7 @@ export const freeTierRouter = router({
       },
       allFeaturesUnlocked: false,
       freeWillModel: true,
-      message: "All features available to all users - Free Will Model",
+      message: "Feature availability is unavailable until entitlement policy is configured",
     };
   }),
 
@@ -94,7 +94,7 @@ export const freeTierRouter = router({
         notificationsPerDay: null as string | null,
         characterLimit: null as string | null,
       },
-      message: "No limits - Full access to all features",
+      message: "Feature limits are unavailable until entitlement policy is configured",
     };
   }),
 
@@ -169,7 +169,7 @@ export const freeTierRouter = router({
         },
       ],
       allPremiumFeaturesAreFree: false,
-      freeWillModel: "All users get unlimited premium access",
+      freeWillModel: "Unavailable until entitlement policy is configured",
     };
   }),
 
