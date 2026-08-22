@@ -30,21 +30,16 @@ export const phase21RealtimeRouter = router({
       tokens: z.array(z.string()),
       interval: z.enum(["1s", "5s", "1m", "5m"]).default("5s"),
     }))
-    .query(async ({ input }) => {
-      return {
-        subscription: {
-          tokens: input.tokens,
-          interval: input.interval,
-          active: true,
-          updates: input.tokens.map(token => ({
-            token,
-            price: Math.random() * 1000,
-            change24h: (Math.random() - 0.5) * 20,
-            timestamp: new Date(),
-          })),
-        },
-      };
-    }),
+    .query(async ({ input }) => ({
+      subscription: {
+        tokens: input.tokens,
+        interval: input.interval,
+        active: false,
+        updates: [],
+      },
+      unavailable: true,
+      reason: "Live prices require a verified market-data provider",
+    })),
 
   // Real-time trading signals
   getRealtimeSignals: publicProcedure
@@ -52,19 +47,14 @@ export const phase21RealtimeRouter = router({
       token: z.string(),
       timeframe: z.enum(["1m", "5m", "15m", "1h", "4h", "1d"]).default("5m"),
     }))
-    .query(async ({ input }) => {
-      const signals = [
-        { type: "BUY", strength: 0.85, reason: "Golden Cross detected" },
-        { type: "HOLD", strength: 0.5, reason: "Consolidation phase" },
-        { type: "SELL", strength: 0.3, reason: "Resistance at 1000" },
-      ];
-      return {
-        token: input.token,
-        timeframe: input.timeframe,
-        currentSignal: signals[Math.floor(Math.random() * signals.length)],
-        nextUpdate: new Date(Date.now() + 60000),
-      };
-    }),
+    .query(async ({ input }) => ({
+      token: input.token,
+      timeframe: input.timeframe,
+      currentSignal: null,
+      nextUpdate: null,
+      unavailable: true,
+      reason: "Trading signals require verified market data and a validated strategy",
+    })),
 
   // Live collaboration session
   joinCollaborationSession: protectedProcedure
@@ -174,21 +164,15 @@ export const phase21RealtimeRouter = router({
       includeVolume: z.boolean().default(true),
       includeFundingRate: z.boolean().default(false),
     }))
-    .query(async ({ input }) => {
-      return {
-        timestamp: new Date(),
-        data: input.tokens.map(token => ({
-          token,
-          price: Math.random() * 10000,
-          volume24h: Math.random() * 1000000000,
-          marketCap: Math.random() * 100000000000,
-          change1h: (Math.random() - 0.5) * 10,
-          change24h: (Math.random() - 0.5) * 20,
-          change7d: (Math.random() - 0.5) * 30,
-          fundingRate: input.includeFundingRate ? (Math.random() - 0.5) * 0.001 : null,
-        })),
-      };
-    }),
+    .query(async ({ input }) => ({
+      timestamp: new Date(),
+      data: [],
+      tokens: input.tokens,
+      includeVolume: input.includeVolume,
+      includeFundingRate: input.includeFundingRate,
+      unavailable: true,
+      reason: "Market data requires a verified external provider",
+    })),
 
   // Advanced order execution
   executeAdvancedOrder: protectedProcedure
