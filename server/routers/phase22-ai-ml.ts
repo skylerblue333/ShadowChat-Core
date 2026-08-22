@@ -62,17 +62,10 @@ export const phase22AiMlRouter = router({
       text: z.string(),
       context: z.enum(["market", "social", "news"]).optional(),
     }))
-    .query(async ({ input }) => {
-      return {
-        sentiment: {
-          score: Math.random() * 100,
-          label: ["positive", "neutral", "negative"][Math.floor(Math.random() * 3)],
-          confidence: Math.random() * 100,
-        },
-        keywords: ["bullish", "momentum", "growth"],
-        entities: ["BTC", "ETH", "Market"],
-      };
-    }),
+    .query(async ({ input }) => ({
+      unavailable: true,
+      error: "Sentiment analysis is unavailable until a verified model and evaluation set are configured",
+    })),
 
   // AI-powered recommendation engine
   getRecommendations: protectedProcedure
@@ -80,18 +73,14 @@ export const phase22AiMlRouter = router({
       type: z.enum(["courses", "trades", "games", "investments"]),
       limit: z.number().default(5),
     }))
-    .query(async ({ input, ctx }) => {
-      return {
-        userId: ctx.user.id,
-        recommendations: Array.from({ length: input.limit }, (_, i) => ({
-          id: `rec_${i}`,
-          title: `${input.type} Recommendation ${i + 1}`,
-          score: Math.random() * 100,
-          reason: "Based on your preferences and behavior",
-          action: `Explore ${input.type} #${i + 1}`,
-        })),
-      };
-    }),
+    .query(async ({ input, ctx }) => ({
+      userId: ctx.user.id,
+      type: input.type,
+      limit: input.limit,
+      recommendations: [],
+      unavailable: true,
+      error: "Recommendations are unavailable until real user signals and a validated ranking model are configured",
+    })),
 
   // Machine learning model performance
   getModelPerformance: publicProcedure.query(async () => {
@@ -187,15 +176,11 @@ export const phase22AiMlRouter = router({
       metric: z.string(),
       periods: z.number().default(30),
     }))
-    .query(async ({ input }) => {
-      return {
-        metric: input.metric,
-        forecast: Array.from({ length: input.periods }, (_, i) => ({
-          period: i + 1,
-          value: Math.random() * 10000,
-          confidence_lower: Math.random() * 8000,
-          confidence_upper: Math.random() * 12000,
-        })),
-      };
-    }),
+    .query(async ({ input }) => ({
+      metric: input.metric,
+      periods: input.periods,
+      forecast: [],
+      unavailable: true,
+      error: "Time-series forecasting is unavailable until a verified data source and validated forecasting model are configured",
+    })),
 });
