@@ -98,10 +98,14 @@ export const integrationsRouter = router({
 
   // ===== STORAGE INTEGRATIONS =====
   s3Upload: protectedProcedure
-    .input(z.object({ filename: z.string(), size: z.number() }))
-    .mutation(async ({ input }) => {
-      return { success: true, url: "s3://bucket/" + input.filename };
-    }),
+    .input(z.object({ filename: z.string().min(1), size: z.number().nonnegative() }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      url: null as string | null,
+      filename: input.filename,
+      error: "Storage upload is unavailable until a verified server-side bucket and object policy are configured",
+    })),
 
   cloudflareCache: publicProcedure
     .input(z.object({ url: z.string() }))
@@ -124,10 +128,14 @@ export const integrationsRouter = router({
 
   // ===== WEBHOOK MANAGEMENT =====
   registerWebhook: protectedProcedure
-    .input(z.object({ url: z.string(), events: z.array(z.string()) }))
-    .mutation(async ({ input }) => {
-      return { success: true, webhookId: "wh_" + Date.now() };
-    }),
+    .input(z.object({ url: z.string().url(), events: z.array(z.string()).min(1) }))
+    .mutation(async ({ input }) => ({
+      success: false,
+      unavailable: true,
+      webhookId: null as string | null,
+      url: input.url,
+      error: "Webhook registration is unavailable until persistent storage, signature validation, and delivery retries are configured",
+    })),
 
   triggerWebhook: publicProcedure
     .input(z.object({ webhookId: z.string(), data: z.any() }))
