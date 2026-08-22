@@ -9,6 +9,7 @@ import {
   products, transactions,
   analyticsEvents,
   cryptoWallets, miningOperations, stakingPositions, burningEvents, swapOrders, priceFeeds, cryptoTransactions, tokenSupply, miningDifficulty,
+  directMessages,
   CRYPTO_TOKENS,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -326,6 +327,44 @@ export async function listUserTransactions(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.createdAt));
+}
+
+export async function createDirectMessage(data: typeof directMessages.$inferInsert) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  const result = await database.insert(directMessages).values(data);
+  const insertedId = Number(result[0].insertId);
+  const rows = await database.select().from(directMessages).where(eq(directMessages.id, insertedId)).limit(1);
+  return rows[0];
+}
+
+export async function listDirectMessages(userId: number, participantId: number, limit: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database
+    .select()
+    .from(directMessages)
+    .where(
+      and(
+        eq(directMessages.senderId, userId),
+        eq(directMessages.recipientId, participantId),
+      ),
+    )
+    .orderBy(desc(directMessages.createdAt), desc(directMessages.id))
+    .limit(limit);
+}
+
+export async function listConversationMessages(userId: number, participantId: number, limit: number) {
+  const database = await getDb();
+  if (!database) throw new Error("Database not available");
+  return database
+    .select()
+    .from(directMessages)
+    .where(
+      sql`(${directMessages.senderId} = ${userId} AND ${directMessages.recipientId} = ${participantId}) OR (${directMessages.senderId} = ${participantId} AND ${directMessages.recipientId} = ${userId})`,
+    )
+    .orderBy(desc(directMessages.createdAt), desc(directMessages.id))
+    .limit(limit);
 }
 
 export async function marketplaceVolume(): Promise<number> {

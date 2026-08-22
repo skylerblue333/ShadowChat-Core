@@ -1,4 +1,4 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, double, json, date, decimal } from "drizzle-orm/mysql-core";
+import { boolean, int, index, mysqlEnum, mysqlTable, text, timestamp, varchar, bigint, double, json, date, decimal } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -280,6 +280,22 @@ export const postLikes = mysqlTable("postLikes", {
   userId: int("userId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+/** Direct messages are persisted only after authentication and participant authorization. */
+export const directMessages = mysqlTable(
+  "directMessages",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    senderId: int("senderId").notNull(),
+    recipientId: int("recipientId").notNull(),
+    content: varchar("content", { length: 2_000 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    senderCreatedAtIdx: index("directMessages_sender_createdAt_idx").on(table.senderId, table.createdAt),
+    recipientCreatedAtIdx: index("directMessages_recipient_createdAt_idx").on(table.recipientId, table.createdAt),
+  }),
+);
 
 export type TradeSession = typeof tradeSessions.$inferSelect;
 export type TradingSignal = typeof tradingSignals.$inferSelect;

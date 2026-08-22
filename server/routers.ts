@@ -59,6 +59,7 @@ import { deliveryRouter } from "./routers/delivery";
 import { miningRouter } from "./routers/mining";
 import { rwaRouter } from "./routers/rwa";
 import { stripeRouter } from "./routers/stripe";
+import { messagesRouter } from "./routers/messages";
 
 export const appRouter = router({
   system: systemRouter,
@@ -138,6 +139,7 @@ export const appRouter = router({
   mining: miningRouter,
   rwa: rwaRouter,
   stripe: stripeRouter,
+  messages: messagesRouter,
   // Global procedures
   getNetworks: publicProcedure.query(async () => []),
   getWidgets: publicProcedure.query(async () => []),
