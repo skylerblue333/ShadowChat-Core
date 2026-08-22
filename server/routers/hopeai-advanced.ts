@@ -135,11 +135,13 @@ Format as JSON: {score: number, strengths: string[], issues: [{severity: string,
         return JSON.parse(text);
       } catch {
         return {
-          score: 7,
-          strengths: ["Code structure", "Variable naming"],
+          score: null as number | null,
+          strengths: [],
           issues: [],
-          suggestions: ["Add error handling", "Add unit tests"],
-          resources: ["TypeScript handbook", "Clean Code principles"],
+          suggestions: [],
+          resources: [],
+          unavailable: true,
+          error: "Code review is unavailable because the model response was not valid JSON",
         };
       }
     }),
