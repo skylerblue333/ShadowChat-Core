@@ -206,11 +206,12 @@ export const agentsRouter = router({
       if (!agent) throw new Error("Invalid agent type");
 
       return {
-        success: true,
-        agent: agent,
-        stounulaId: agent.id,
-        status: "account_created",
-        timestamp: new Date(),
+        success: false,
+        unavailable: true,
+        agent,
+        stounulaId: null as string | null,
+        status: "unavailable" as const,
+        error: "Agent-account creation is unavailable until a verified account service and persistence layer are configured",
       };
     }),
 
@@ -222,11 +223,13 @@ export const agentsRouter = router({
       if (!agent) throw new Error("Invalid agent type");
 
       return {
-        agent: agent,
-        stounulaId: agent.id,
-        email: agent.email,
-        status: "active",
+        agent: null,
+        stounulaId: null as string | null,
+        email: null as string | null,
+        status: "unavailable" as const,
+        unavailable: true,
         system: "Stounula",
+        error: "Agent-account state is unavailable until a verified account service is configured",
       };
     }),
 
@@ -272,10 +275,12 @@ export const agentsRouter = router({
   listAgentAccounts: publicProcedure
     .query(async () => {
       return {
-        agents: Object.values(STOUNULA_AGENTS),
-        total: Object.keys(STOUNULA_AGENTS).length,
+        agents: [],
+        total: null as number | null,
         system: "Stounula",
-        status: "all_active",
+        status: "unavailable" as const,
+        unavailable: true,
+        error: "Agent-account listing is unavailable until a verified account service is configured",
       };
     }),
 
