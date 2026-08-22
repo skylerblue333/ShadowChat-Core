@@ -211,30 +211,21 @@ export const rulesEngineRouter = router({
     .input(z.object({ action: z.string(), region: z.string() }))
     .query(async ({ input }) => {
       return {
-        isCompliant: true,
-        requiresKYC: false,
-        requiresAML: false,
+        isCompliant: false,
+        requiresKYC: null as boolean | null,
+        requiresAML: null as boolean | null,
         region: input.region,
         restrictions: [],
+        unavailable: true,
+        error: "Compliance evaluation is unavailable until jurisdictional rules and verified identity checks are configured",
       };
     }),
 
   // ===== FEATURE FLAGS =====
-  getFeatureFlags: publicProcedure.query(async () => {
-    return {
-      aiEnabled: true,
-      tradingEnabled: true,
-      gamingEnabled: true,
-      streamingEnabled: true,
-      socialEnabled: true,
-      learningEnabled: true,
-      governanceEnabled: true,
-      charityEnabled: true,
-      cryptoEnabled: true,
-      betaFeatures: true,
-      maintenanceMode: false,
-    };
-  }),
+  getFeatureFlags: publicProcedure.query(async () => ({
+    unavailable: true,
+    error: "Feature flags are unavailable until server-side configuration is connected",
+  })),
 
   // ===== SYSTEM RULES =====
   getSystemRules: publicProcedure.query(async () => {
