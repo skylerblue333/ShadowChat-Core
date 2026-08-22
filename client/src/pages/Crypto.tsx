@@ -88,19 +88,17 @@ export default function Crypto() {
 
   const handleMine = async () => {
     const res = await startMining.mutateAsync({ token: mineToken, hashRate: Number(hashRate) });
-    if (res.success && res.operationId) {
-      toast.success(`Mining started! Solving block...`);
-      // Auto-complete after short delay (simulating PoW)
-      setTimeout(async () => {
-        const done = await completeMining.mutateAsync({ operationId: res.operationId });
-        if (done.success) {
-          toast.success(`Block mined! +${done.reward?.toFixed(4)} ${mineToken}`);
-          refetchAll();
-        }
-      }, 2000);
-    } else {
-      toast.error(res.error || "Mining failed");
+    if (res.unavailable) {
+      toast.error(res.error || "Mining is unavailable");
+      return;
     }
+
+    if (res.success && typeof res.operationId === "number") {
+      toast.success("Mining operation started");
+      return;
+    }
+
+    toast.error(res.error || "Mining failed");
   };
 
   const handleStake = async () => {

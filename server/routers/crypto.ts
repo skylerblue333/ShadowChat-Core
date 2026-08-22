@@ -65,91 +65,22 @@ export const cryptoRouter = router({
   // ============ MINING ============
   startMining: protectedProcedure
     .input(z.object({ token: TokenEnum, hashRate: z.number().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) return { success: false, error: "DB unavailable" };
-
-      try {
-        // Get current difficulty
-        const difficulty = await db
-          .select()
-          .from(miningDifficulty)
-          .where(eq(miningDifficulty.token, input.token))
-          .limit(1);
-
-        const currentDiff = difficulty[0]?.currentDifficulty || 1;
-        const reward = 10 / (currentDiff / 100); // Reward inversely proportional to difficulty
-
-        const result = await db.insert(miningOperations).values({
-          userId: ctx.user.id,
-          token: input.token,
-          difficulty: currentDiff,
-          hashRate: input.hashRate,
-          rewardAmount: reward,
-          status: "active",
-        });
-
-        return { success: true, operationId: (result as any).insertId || 0, reward };
-      } catch (error) {
-        return { success: false, error: String(error) };
-      }
-    }),
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      operationId: null as number | null,
+      reward: null as number | null,
+      error: "Mining is unavailable until verified mining infrastructure and reward accounting are configured",
+    })),
 
   completeMining: protectedProcedure
-    .input(z.object({ operationId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
-      if (!db) return { success: false };
-
-      try {
-        const operation = await db
-          .select()
-          .from(miningOperations)
-          .where(and(eq(miningOperations.id, input.operationId), eq(miningOperations.userId, ctx.user.id)))
-          .limit(1);
-
-        if (!operation[0]) return { success: false, error: "Operation not found" };
-
-        const op = operation[0];
-
-        // Update mining operation
-        await db
-          .update(miningOperations)
-          .set({ status: "completed", completedAt: new Date() })
-          .where(eq(miningOperations.id, input.operationId));
-
-        // Add reward to wallet
-        const wallet = await db
-          .select()
-          .from(cryptoWallets)
-          .where(and(eq(cryptoWallets.userId, ctx.user.id), eq(cryptoWallets.token, op.token)))
-          .limit(1);
-
-        if (wallet[0]) {
-          await db
-            .update(cryptoWallets)
-            .set({
-              balance: wallet[0].balance + op.rewardAmount,
-              totalMined: wallet[0].totalMined + op.rewardAmount,
-            })
-            .where(eq(cryptoWallets.id, wallet[0].id));
-        }
-
-        // Record transaction
-        await db.insert(cryptoTransactions).values({
-          userId: ctx.user.id,
-          token: op.token,
-          type: "mining",
-          amount: op.rewardAmount,
-          relatedId: input.operationId,
-          description: `Mining reward: ${op.rewardAmount} ${op.token}`,
-        });
-
-        return { success: true, reward: op.rewardAmount };
-      } catch (error) {
-        return { success: false, error: String(error) };
-      }
-    }),
+    .input(z.object({ operationId: z.number().int().positive() }))
+    .mutation(async () => ({
+      success: false,
+      unavailable: true,
+      reward: null as number | null,
+      error: "Mining completion is unavailable until verified mining infrastructure exists",
+    })),
 
   getMiningOperations: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
