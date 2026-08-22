@@ -13,13 +13,11 @@ import { phase21RealtimeRouter } from "./routers/phase21-realtime";
 import { phase22AiMlRouter } from "./routers/phase22-ai-ml";
 import { phase23AdminDashboardRouter } from "./routers/phase23-admin-dashboard";
 import { phase24AnalyticsRouter } from "./routers/phase24-analytics";
-import { phase25NotificationsRouter } from "./routers/phase25-notifications";
 import { phase26MobileRouter } from "./routers/phase26-mobile";
 import { phase27SecurityRouter } from "./routers/phase27-security";
 import { phase28PerformanceRouter } from "./routers/phase28-performance";
 import { phase29UiRouter } from "./routers/phase29-ui";
 import { phase30GatewayRouter } from "./routers/phase30-gateway";
-import { phase32Router } from "./routers/phase32-v1-features";
 import { analyticsRouter } from "./routers/analytics";
 import { tradingRouter } from "./routers/trading";
 import { escrowRouter } from "./routers/escrow";
@@ -124,13 +122,11 @@ export const appRouter = router({
   phase22: phase22AiMlRouter,
   phase23: phase23AdminDashboardRouter,
   phase24: phase24AnalyticsRouter,
-  phase25: phase25NotificationsRouter,
   phase26: phase26MobileRouter,
   phase27: phase27SecurityRouter,
   phase28: phase28PerformanceRouter,
   phase29: phase29UiRouter,
   phase30: phase30GatewayRouter,
-  phase32: phase32Router,
   ai: aiRouter,
   autocall: autocallRouter,
   carbonCredit: carbonCreditRouter,
