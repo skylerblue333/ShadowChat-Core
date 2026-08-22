@@ -31,7 +31,7 @@ export const featuresExpansionRouter = router({
     unavailable: true,
     error: "Checkout is unavailable until a real order and payment ledger are configured",
   })),
-  orderTrack: publicProcedure.input(z.object({ orderId: z.number() })).query(async ({ input }) => ({ status: "shipped" })),
+  orderTrack: publicProcedure.input(z.object({ orderId: z.number().int().positive() })).query(async () => ({ status: "unavailable" as const, unavailable: true, error: "Order tracking is unavailable until real order and carrier records are configured" })),
   orderCancel: protectedProcedure.input(z.object({ orderId: z.number() })).mutation(async ({ input }) => ({ success: true })),
   orderReturn: protectedProcedure.input(z.object({ orderId: z.number() })).mutation(async ({ input }) => ({ success: true })),
   paymentProcess: protectedProcedure.input(z.object({ amount: z.number().positive() })).mutation(async () => ({
@@ -45,7 +45,7 @@ export const featuresExpansionRouter = router({
     error: "Payment refunds are unavailable until a verified payment provider and ledger are configured",
   })),
   invoiceGenerate: protectedProcedure.input(z.object({ orderId: z.number() })).query(async ({ input }) => ({ invoiceUrl: "invoice_" + input.orderId })),
-  shippingCalculate: publicProcedure.input(z.object({ zipcode: z.string() })).query(async ({ input }) => ({ cost: 9.99 })),
+  shippingCalculate: publicProcedure.input(z.object({ zipcode: z.string().min(1) })).query(async () => ({ cost: null as number | null, unavailable: true, error: "Shipping calculation is unavailable until a verified carrier-rate service is configured" })),
 
   // ===== SOCIAL FEATURES (200+ features) =====
   profileView: publicProcedure.input(z.object({ userId: z.number() })).query(async ({ input }) => ({ profile: {} })),
@@ -71,10 +71,10 @@ export const featuresExpansionRouter = router({
 
   // ===== LEARNING (100+ features) =====
   courseEnroll: protectedProcedure.input(z.object({ courseId: z.number() })).mutation(async ({ input }) => ({ success: true })),
-  courseComplete: protectedProcedure.input(z.object({ courseId: z.number() })).mutation(async ({ input }) => ({ certificateUrl: "cert_" + input.courseId })),
+  courseComplete: protectedProcedure.input(z.object({ courseId: z.number().int().positive() })).mutation(async () => ({ certificateUrl: null as string | null, success: false, unavailable: true, error: "Course completion certificates are unavailable until verified completion and credential storage are configured" })),
   lessonView: publicProcedure.input(z.object({ lessonId: z.number() })).query(async ({ input }) => ({ lesson: {} })),
   quizTake: protectedProcedure.input(z.object({ quizId: z.number() })).query(async ({ input }) => ({ questions: [] })),
-  quizSubmit: protectedProcedure.input(z.object({ quizId: z.number(), answers: z.array(z.string()) })).mutation(async ({ input }) => ({ score: 90 })),
+  quizSubmit: protectedProcedure.input(z.object({ quizId: z.number().int().positive(), answers: z.array(z.string()) })).mutation(async () => ({ score: null as number | null, unavailable: true, error: "Quiz scoring is unavailable until real quiz content and grading rules are configured" })),
 
   // ===== ANALYTICS (100+ features) =====
   dashboardGet: protectedProcedure.query(async () => ({ dashboard: {} })),
@@ -84,15 +84,15 @@ export const featuresExpansionRouter = router({
   forecastGet: publicProcedure.input(z.object({ days: z.number() })).query(async ({ input }) => ({ forecast: [] })),
 
   // ===== COMMUNITY (50+ features) =====
-  forumPostCreate: protectedProcedure.input(z.object({ title: z.string(), content: z.string() })).mutation(async ({ input }) => ({ postId: 1 })),
+  forumPostCreate: protectedProcedure.input(z.object({ title: z.string().min(1), content: z.string().min(1) })).mutation(async () => ({ postId: null as number | null, success: false, unavailable: true, error: "Forum persistence is unavailable until the verified community store is connected" })),
   forumPostReply: protectedProcedure.input(z.object({ postId: z.number(), content: z.string() })).mutation(async ({ input }) => ({ replyId: 1 })),
   forumPostVote: protectedProcedure.input(z.object({ postId: z.number(), vote: z.number() })).mutation(async ({ input }) => ({ success: true })),
   wikiPageCreate: protectedProcedure.input(z.object({ title: z.string() })).mutation(async ({ input }) => ({ pageId: 1 })),
   wikiPageEdit: protectedProcedure.input(z.object({ pageId: z.number(), content: z.string() })).mutation(async ({ input }) => ({ success: true })),
 
   // ===== TOOLS & UTILITIES (100+ features) =====
-  fileUpload: protectedProcedure.input(z.object({ filename: z.string() })).mutation(async ({ input }) => ({ fileId: 1 })),
-  fileDownload: publicProcedure.input(z.object({ fileId: z.number() })).query(async ({ input }) => ({ url: "file_" + input.fileId })),
+  fileUpload: protectedProcedure.input(z.object({ filename: z.string().min(1) })).mutation(async () => ({ fileId: null as number | null, success: false, unavailable: true, error: "File upload is unavailable until verified object storage is connected" })),
+  fileDownload: publicProcedure.input(z.object({ fileId: z.number().int().positive() })).query(async () => ({ url: null as string | null, unavailable: true, error: "File download is unavailable until verified object storage is connected" })),
   fileShare: protectedProcedure.input(z.object({ fileId: z.number(), userId: z.number() })).mutation(async ({ input }) => ({ success: true })),
   calendarCreate: protectedProcedure.input(z.object({ title: z.string() })).mutation(async ({ input }) => ({ eventId: 1 })),
   calendarUpdate: protectedProcedure.input(z.object({ eventId: z.number() })).mutation(async ({ input }) => ({ success: true })),
