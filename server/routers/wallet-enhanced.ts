@@ -161,17 +161,18 @@ export const walletEnhancedRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
-        // In production, this would fetch from blockchain explorer API
         return {
           transactions: [],
-          total: 0,
+          total: null as number | null,
           limit: input.limit,
           offset: input.offset,
           walletAddress: input.walletAddress,
           chainId: input.chainId,
+          unavailable: true,
+          error: "Transaction history is unavailable until a verified chain explorer or transaction store is configured",
         };
       } catch {
-        return { transactions: [], total: 0, limit: input.limit, offset: input.offset };
+        return { transactions: [], total: null as number | null, limit: input.limit, offset: input.offset, unavailable: true, error: "Transaction history lookup failed" };
       }
     }),
 
@@ -222,12 +223,14 @@ export const walletEnhancedRouter = router({
     .query(async ({ ctx, input }) => {
       return {
         address: input.walletAddress,
-        isConnected: true,
+        isConnected: false,
+        unavailable: true,
         networks: Object.entries(SUPPORTED_NETWORKS).map(([key, value]) => ({
           key,
           ...value,
         })),
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: null as string | null,
+        error: "Wallet connection state is unavailable until a verified connection is persisted",
       };
     }),
 
@@ -241,14 +244,13 @@ export const walletEnhancedRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        // In production, this would persist to database
         return {
-          success: true,
-          message: "Wallet data persisted",
+          success: false,
+          unavailable: true,
           walletAddress: input.walletAddress,
           provider: input.provider,
           chainId: input.chainId,
-          timestamp: new Date().toISOString(),
+          error: "Wallet persistence is unavailable until a verified database write is implemented",
         };
       } catch (error) {
         return { success: false, error: "Failed to persist wallet data" };
