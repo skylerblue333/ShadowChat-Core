@@ -285,20 +285,25 @@ export const cryptoRouter = router({
   // ============ PORTFOLIO ============
   getPortfolio: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
-    if (!db) return { wallets: [], totalValueUsd: 0 };
+      if (!db) return { wallets: [], totalValueUsd: null as number | null, unavailable: true, error: "Portfolio valuation is unavailable because the database is not configured" };
 
     const wallets = await db.select().from(cryptoWallets).where(eq(cryptoWallets.userId, ctx.user.id));
 
     const prices = await db.select().from(priceFeeds);
 
+    const missingPrice = wallets.some((w) => prices.find((p) => p.token === w.token)?.priceUsd == null);
+    if (missingPrice) {
+      return { wallets: [], totalValueUsd: null as number | null, unavailable: true, error: "Portfolio valuation is unavailable because verified price data is missing" };
+    }
+
     let totalValueUsd = 0;
     const enriched = wallets.map((w) => {
-      const price = prices.find((p) => p.token === w.token)?.priceUsd || 0;
+      const price = prices.find((p) => p.token === w.token)!.priceUsd;
       const valueUsd = (w.balance + w.stakedBalance) * price;
       totalValueUsd += valueUsd;
       return { ...w, price, valueUsd };
     });
 
-    return { wallets: enriched, totalValueUsd };
+    return { wallets: enriched, totalValueUsd, unavailable: false };
   }),
 });
