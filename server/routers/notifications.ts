@@ -247,10 +247,12 @@ export const notificationsRouter = router({
 
   // ===== CLEAR ALL NOTIFICATIONS =====
   clearAllNotifications: protectedProcedure.mutation(async ({ ctx }) => {
-    return {
-      success: true,
-      userId: ctx.user.id,
-      message: "All notifications cleared",
-    };
+    const database = await getDb();
+    if (!database) throw new Error("Database not available");
+
+    await database
+      .delete(pushNotificationsAnalytics)
+      .where(eq(pushNotificationsAnalytics.userId, ctx.user.id));
+    return { success: true, userId: ctx.user.id };
   }),
 });
