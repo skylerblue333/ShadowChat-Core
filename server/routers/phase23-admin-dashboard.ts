@@ -90,10 +90,11 @@ export const phase23AdminDashboardRouter = router({
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Admin only");
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         userId: input.userId,
         action: input.action,
-        timestamp: new Date(),
+        error: "User moderation is unavailable until real user records, authorization checks, and audit persistence are configured",
       };
     }),
 
@@ -107,10 +108,11 @@ export const phase23AdminDashboardRouter = router({
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Admin only");
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         contentId: input.contentId,
         action: input.action,
-        timestamp: new Date(),
+        error: "Content moderation is unavailable until real content records, authorization checks, and audit persistence are configured",
       };
     }),
 
@@ -123,10 +125,10 @@ export const phase23AdminDashboardRouter = router({
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") throw new Error("Admin only");
       return {
-        success: true,
+        success: false,
+        unavailable: true,
         key: input.key,
-        value: input.value,
-        updated: new Date(),
+        error: "System configuration updates are unavailable until validated server-side storage and audit logging are configured",
       };
     }),
 
