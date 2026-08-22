@@ -64,60 +64,30 @@ export const notificationsRouter = router({
 
   // ===== GET ACTIVITY FEED =====
   getActivityFeed: protectedProcedure
-    .input(z.object({ limit: z.number().default(30) }))
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(30) }))
     .query(async ({ ctx, input }) => {
-      const activities = [
-        {
-          id: 1,
-          actor: "System",
-          action: "Trading Signal Generated",
-          target: "BTC/USD",
-          details: "AI detected market breakout pattern",
-          timestamp: new Date(Date.now() - 2 * 60000),
-          icon: "⚡",
-        },
-        {
-          id: 2,
-          actor: "Alex Rivera",
-          action: "Started Following You",
-          target: "Your Profile",
-          details: "98% compatibility match",
-          timestamp: new Date(Date.now() - 5 * 60000),
-          icon: "👥",
-        },
-        {
-          id: 3,
-          actor: "Marketplace Buyer",
-          action: "Purchased Your Listing",
-          target: "AI Trading Bot Pro",
-          details: "Sold for 2,500 USDT - Escrow confirmed",
-          timestamp: new Date(Date.now() - 15 * 60000),
-          icon: "✅",
-        },
-        {
-          id: 4,
-          actor: "Charity Campaign",
-          action: "Milestone Reached",
-          target: "Clean Water Initiative",
-          details: "$50,000 raised - 100% funded!",
-          timestamp: new Date(Date.now() - 30 * 60000),
-          icon: "🎉",
-        },
-        {
-          id: 5,
-          actor: "Governance",
-          action: "New Proposal",
-          target: "DODGE Reward Increase",
-          details: "Vote now: Increase rewards from 3% to 5%",
-          timestamp: new Date(Date.now() - 1 * 3600000),
-          icon: "🗳️",
-        },
-      ];
+      const database = await getDb();
+      if (!database) throw new Error("Database not available");
+
+      const notifications = await database
+        .select()
+        .from(pushNotificationsAnalytics)
+        .where(eq(pushNotificationsAnalytics.userId, ctx.user.id))
+        .orderBy(desc(pushNotificationsAnalytics.createdAt))
+        .limit(input.limit);
 
       return {
         userId: ctx.user.id,
-        activities: activities.slice(0, input.limit),
-        totalCount: activities.length,
+        activities: notifications.map((notification) => ({
+          id: notification.id,
+          actor: "System",
+          action: notification.type,
+          target: notification.title,
+          details: notification.message,
+          timestamp: notification.createdAt,
+          icon: null,
+        })),
+        totalCount: notifications.length,
       };
     }),
 
