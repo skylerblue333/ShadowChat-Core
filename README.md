@@ -10,6 +10,10 @@
 
 **Current status:** The repository is tracked on the `main` branch. The existing source tree, configuration, tests, workflows, and documentation remain authoritative for supported behavior and maturity. A code audit is not a production-readiness certification, and the presence of a test or workflow file does not establish that all checks pass.
 
+## Verified runtime boundary
+
+The server now registers `GET /health`, returning the measured process uptime, memory usage, ISO timestamp, and healthy status from `server/health.ts`. This is an operational liveness endpoint only; it does not claim database, wallet, blockchain, AI-provider, or production-traffic readiness. The contract is covered by `server/health.test.ts`, and the server bundle compiles successfully with esbuild.
+
 **Relationship to the wider portfolio:** This repository is one focused component of the broader Skyler Blue Spillers portfolio across AI, software engineering, cloud and DevOps, cybersecurity, blockchain, finance, education, social systems, and creative work. It may provide a service boundary, implementation pattern, experiment, archive, or reusable idea for related repositories. Treat repositories as technical dependencies only where documented interfaces and verified project requirements support that relationship.
 
 **Quality and security note:** Potential secret-like or credential-like patterns were detected in repository text and require manual review; the static scan does not prove that a real secret is exposed. The audit also located TODO/FIXME markers in 7 file(s), indicating areas that may deserve follow-up.
