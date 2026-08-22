@@ -142,15 +142,8 @@ export const escrowRouter = router({
         .set({ buyerConfirmed: true })
         .where(eq(escrowTransactions.id, input.transactionId));
 
-      // If both confirmed, release funds
-      if (tx.sellerConfirmed) {
-        await db
-          .update(escrowTransactions)
-          .set({ status: "released" as const, completedAt: new Date() })
-          .where(eq(escrowTransactions.id, input.transactionId));
-      }
-
-      return { success: true };
+      // Confirmation is persisted, but funds remain pending until a verified settlement ledger exists.
+      return { success: true, settlementStatus: "pending_settlement" as const };
     }),
 
   // Seller confirms shipment
@@ -173,15 +166,8 @@ export const escrowRouter = router({
         .set({ sellerConfirmed: true })
         .where(eq(escrowTransactions.id, input.transactionId));
 
-      // If both confirmed, release funds
-      if (tx.buyerConfirmed) {
-        await db
-          .update(escrowTransactions)
-          .set({ status: "released" as const, completedAt: new Date() })
-          .where(eq(escrowTransactions.id, input.transactionId));
-      }
-
-      return { success: true };
+      // Confirmation is persisted, but funds remain pending until a verified settlement ledger exists.
+      return { success: true, settlementStatus: "pending_settlement" as const };
     }),
 
   // Get user's transactions
