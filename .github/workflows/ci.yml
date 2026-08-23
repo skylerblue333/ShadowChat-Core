@@ -1,4 +1,4 @@
-name: CI
+name: ShadowChat Core Verification
 
 on:
   push:
@@ -13,13 +13,32 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run check
-      - run: pnpm test
-      - run: pnpm run build
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run check
+
+      - name: Test suite
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm run build
+
+      - name: High-severity dependency audit
+        run: pnpm audit --audit-level high
