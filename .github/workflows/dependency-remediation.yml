@@ -1,0 +1,44 @@
+name: Dependency Remediation
+
+on:
+  push:
+    branches:
+      - product/36-shadowchat-major-app-20260825
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate-lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch head
+        uses: actions/checkout@v4
+        with:
+          ref: product/36-shadowchat-major-app-20260825
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Regenerate lockfile from manifest
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Commit regenerated lockfile
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already matches package.json"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore: regenerate dependency lockfile"
+          git push origin HEAD:product/36-shadowchat-major-app-20260825
