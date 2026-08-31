@@ -1,0 +1,52 @@
+name: Temporary Dependency Audit Diagnostic
+
+on:
+  push:
+    branches: [product/36-shadowchat-major-app-20260825]
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: product/36-shadowchat-major-app-20260825
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Capture high-severity audit findings
+        shell: bash
+        run: |
+          pnpm audit --audit-level high --json > /tmp/audit.json || true
+          node - <<'NODE' > audit-report.txt
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('/tmp/audit.json', 'utf8'));
+          const vulns = data.vulnerabilities || {};
+          const rows = Object.entries(vulns)
+            .filter(([,v]) => ['high','critical'].includes(v.severity))
+            .map(([name,v]) => ({name, severity:v.severity, range:v.range, nodes:v.nodes, via:v.via, fixAvailable:v.fixAvailable}));
+          console.log(JSON.stringify({metadata:data.metadata, findings:rows}, null, 2));
+          NODE
+
+      - name: Commit diagnostic report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audit-report.txt
+          git commit -m "chore: capture remaining dependency audit finding"
+          git push origin HEAD:product/36-shadowchat-major-app-20260825
