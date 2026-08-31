@@ -36,11 +36,23 @@ jobs:
           node - <<'NODE' > audit-report.txt
           const fs = require('fs');
           const data = JSON.parse(fs.readFileSync('/tmp/audit.json', 'utf8'));
-          const vulns = data.vulnerabilities || {};
-          const rows = Object.entries(vulns)
+          const advisories = Object.values(data.advisories || {})
+            .filter(a => ['high','critical'].includes(a.severity))
+            .map(a => ({
+              id: a.id,
+              module_name: a.module_name,
+              severity: a.severity,
+              title: a.title,
+              vulnerable_versions: a.vulnerable_versions,
+              patched_versions: a.patched_versions,
+              recommendation: a.recommendation,
+              findings: a.findings,
+              url: a.url
+            }));
+          const vulnerabilities = Object.entries(data.vulnerabilities || {})
             .filter(([,v]) => ['high','critical'].includes(v.severity))
             .map(([name,v]) => ({name, severity:v.severity, range:v.range, nodes:v.nodes, via:v.via, fixAvailable:v.fixAvailable}));
-          console.log(JSON.stringify({metadata:data.metadata, findings:rows}, null, 2));
+          console.log(JSON.stringify({topLevelKeys:Object.keys(data), metadata:data.metadata, advisories, vulnerabilities}, null, 2));
           NODE
 
       - name: Commit diagnostic report
@@ -48,5 +60,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add audit-report.txt
-          git commit -m "chore: capture remaining dependency audit finding"
+          if git diff --cached --quiet; then
+            echo "Diagnostic report unchanged"
+            exit 0
+          fi
+          git commit -m "chore: refresh dependency audit diagnostic"
           git push origin HEAD:product/36-shadowchat-major-app-20260825
