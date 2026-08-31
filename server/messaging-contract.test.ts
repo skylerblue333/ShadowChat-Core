@@ -14,9 +14,9 @@ describe("messaging contract", () => {
     expect(() => createMessageInput.parse({ recipientId: 2, content: "x".repeat(2_001) })).toThrow();
   });
 
-  it("creates a typed record with stable supplied identity and time", () => {
+  it("creates a defensive typed record with stable supplied identity and time", () => {
     const now = new Date("2026-08-22T12:00:00.000Z");
-    const record = createMessageRecord(1, { recipientId: 2, content: "hello" }, now, "message-1");
+    const record = createMessageRecord(1, { recipientId: 2, content: " hello " }, now, "message-1");
     expect(record).toEqual({
       id: "message-1",
       senderId: 1,
@@ -24,13 +24,24 @@ describe("messaging contract", () => {
       content: "hello",
       createdAt: now,
     });
+    expect(record.createdAt).not.toBe(now);
   });
 
-  it("rejects self-messaging and restricts reads to participants", () => {
+  it("validates direct record construction instead of assuming pre-parsed input", () => {
+    expect(() => createMessageRecord(1, { recipientId: 2, content: "x".repeat(2_001) })).toThrow();
+    expect(() => createMessageRecord(1, { recipientId: 2, content: "hello" }, new Date("invalid"))).toThrow(
+      "valid Date",
+    );
+    expect(() => createMessageRecord(1, { recipientId: 2, content: "hello" }, new Date(), "bad id!"))
+      .toThrow();
+  });
+
+  it("rejects self-messaging and restricts reads to valid participants", () => {
     expect(() => createMessageRecord(1, { recipientId: 1, content: "hello" })).toThrow("different users");
     const message = { senderId: 1, recipientId: 2 };
     expect(canReadMessage(1, message)).toBe(true);
     expect(canReadMessage(2, message)).toBe(true);
     expect(canReadMessage(3, message)).toBe(false);
+    expect(canReadMessage(0, message)).toBe(false);
   });
 });
