@@ -1,4 +1,4 @@
-name: Temporary Dependency Audit Diagnostic
+name: Temporary Lockfile Refresh
 
 on:
   push:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  diagnose:
+  refresh:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,43 +26,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install locked dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Refresh lockfile only
+        run: pnpm install --lockfile-only --no-frozen-lockfile
 
-      - name: Capture high-severity audit findings
-        shell: bash
+      - name: Commit refreshed lockfile
         run: |
-          pnpm audit --audit-level high --json > /tmp/audit.json || true
-          node - <<'NODE' > audit-report.txt
-          const fs = require('fs');
-          const data = JSON.parse(fs.readFileSync('/tmp/audit.json', 'utf8'));
-          const advisories = Object.values(data.advisories || {})
-            .filter(a => ['high','critical'].includes(a.severity))
-            .map(a => ({
-              id: a.id,
-              module_name: a.module_name,
-              severity: a.severity,
-              title: a.title,
-              vulnerable_versions: a.vulnerable_versions,
-              patched_versions: a.patched_versions,
-              recommendation: a.recommendation,
-              findings: a.findings,
-              url: a.url
-            }));
-          const vulnerabilities = Object.entries(data.vulnerabilities || {})
-            .filter(([,v]) => ['high','critical'].includes(v.severity))
-            .map(([name,v]) => ({name, severity:v.severity, range:v.range, nodes:v.nodes, via:v.via, fixAvailable:v.fixAvailable}));
-          console.log(JSON.stringify({topLevelKeys:Object.keys(data), metadata:data.metadata, advisories, vulnerabilities}, null, 2));
-          NODE
-
-      - name: Commit diagnostic report
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add audit-report.txt
-          if git diff --cached --quiet; then
-            echo "Diagnostic report unchanged"
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already current"
             exit 0
           fi
-          git commit -m "chore: refresh dependency audit diagnostic"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "fix: refresh lockfile for final audit remediation"
           git push origin HEAD:product/36-shadowchat-major-app-20260825
